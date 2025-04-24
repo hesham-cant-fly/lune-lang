@@ -1,0 +1,75 @@
+const std = @import("std");
+
+const Number = @import("Number.zig").Number;
+
+const Token = @This();
+pub const TokenList = std.ArrayList(Token);
+
+pub const TokenKind = union(enum) {
+    Var, // 'var'
+    Const, // 'const'
+
+    Identifier: []const u8,
+    StringLit: []const u8,
+    NumberLit: Number,
+
+    Plus, // '+'
+    Minus, // '-'
+    Star, // '*'
+    FSlash, // '/'
+    DoubleStar, // '**'
+
+    OpenParen, // '('
+    CloseParen, // ')'
+
+    pub fn print(self: TokenKind) void {
+        const sprint = std.debug.print;
+        switch (self) {
+            .Var => sprint("Var", .{}),
+            .Const => sprint("Const", .{}),
+
+            .Identifier => |id| sprint("Identifer({s})", .{id}),
+            .StringLit => |str| sprint("StringLit({s})", .{str}),
+            .NumberLit => |num| num.print(),
+
+            .Plus => sprint("Plus", .{}),
+            .Minus => sprint("Minus", .{}),
+            .Star => sprint("Star", .{}),
+            .FSlash => sprint("FSlash", .{}),
+            .DoubleStar => sprint("DoubleStar", .{}),
+
+            .OpenParen => sprint("OpenParen", .{}),
+            .CloseParen => sprint("CloseParen", .{}),
+        }
+    }
+};
+
+kind: TokenKind,
+lexem: []const u8,
+line: usize,
+column: usize,
+
+pub fn init(kind: TokenKind, lexem: []const u8, line: usize, column: usize) Token {
+    return .{
+        .kind = kind,
+        .lexem = lexem,
+        .line = line,
+        .column = column,
+    };
+}
+
+pub fn print(self: Token) void {
+    std.debug.print("Token {c} kind: ", .{'{'});
+    self.kind.print();
+    std.debug.print(", lexem: '{s}' {c}", .{ self.lexem, '}' });
+}
+
+pub fn print_list(self: TokenList) void {
+    std.debug.print("[\n", .{});
+    for (self.items) |item| {
+        std.debug.print("  ", .{});
+        item.print();
+        std.debug.print(",\n", .{});
+    }
+    std.debug.print("]\n", .{});
+}
