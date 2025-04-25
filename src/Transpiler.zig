@@ -43,10 +43,12 @@ fn compile_lua_stmt(stmt: AST.Stmt, res: *String) Error!void {
         .Var => |vr| {
             try res.appendSlice("local ");
             try res.appendSlice(vr.name.lexem);
+            try res.appendSlice(" = ");
             if (vr.value) |value| {
-                try res.appendSlice(" = ");
                 try compile_lua_expr(value, res);
                 res.items.len -= 1;
+            } else {
+                try res.appendSlice("nil");
             }
         },
         .Const => |con| {
@@ -95,6 +97,9 @@ fn compile_lua_expr(expr: AST.Expr, res: *String) Error!void {
             try res.append('(');
             try compile_lua_expr(group, res);
             try res.appendSlice(") ");
+        },
+        .Nil => {
+            try res.appendSlice("nil ");
         },
     }
 }

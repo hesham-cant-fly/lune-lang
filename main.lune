@@ -1,5 +1,8 @@
-var x = 10;
-var y = 20;
-var z = x + y;
-var a; -- = x + y;
-const b = a;
+-- Comment
+var x   = 10;
+var y   = 20;
+var z   = x + y;
+var a;
+const B = a;
+
+const Z = B - nil;

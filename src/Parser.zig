@@ -227,6 +227,16 @@ fn parse_primary(self: *Parser) Error!AST.Expr {
         );
     }
 
+    if (self.match_one(.Nil)) |tok| {
+        return AST.Expr.init(
+            tok,
+            tok,
+            try AST.ExprNode.create(self.allocator, .{
+                .Nil = tok,
+            }),
+        );
+    }
+
     if (self.match_one(.OpenParen)) |start| {
         const expr = try self.parse_expr();
         errdefer expr.deinit(self.allocator);

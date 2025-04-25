@@ -43,6 +43,7 @@ pub fn main() !void {
     });
     defer out_file.close();
 
+    std.debug.print("{s}\n", .{res.items});
     try out_file.writeAll(res.items);
 }
 

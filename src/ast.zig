@@ -81,6 +81,7 @@ pub const ExprNode = union(enum) {
     Identifier: Token,
     Boolean: Token,
     Grouping: Expr,
+    Nil: Token,
 
     pub fn create(allocator: Allocator, value: ExprNode) Allocator.Error!*ExprNode {
         const result = try allocator.create(ExprNode);
@@ -111,7 +112,7 @@ pub const Expr = struct {
             ExprNode.Unary => |unary| {
                 unary.rhs.deinit(allocator);
             },
-            ExprNode.String, ExprNode.Number, ExprNode.Identifier, ExprNode.Boolean => {},
+            .String, .Number, .Identifier, .Boolean, .Nil => {},
             ExprNode.Grouping => |expr| {
                 expr.deinit(allocator);
             },

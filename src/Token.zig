@@ -9,6 +9,8 @@ pub const TokenKindTag = enum {
     Var, // 'var'
     Const, // 'const'
 
+    Nil, // 'nil'
+
     Identifier,
     StringLit,
     NumberLit,
@@ -31,6 +33,8 @@ pub const TokenKindTag = enum {
 pub const TokenKind = union(TokenKindTag) {
     Var, // 'var'
     Const, // 'const'
+
+    Nil, // 'nil'
 
     Identifier: []const u8,
     StringLit: []const u8,

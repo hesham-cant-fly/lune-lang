@@ -27,10 +27,7 @@ pub fn build(b: *Build) void {
     make_test_step(b, exe_mod);
 }
 
-fn add_dependencies(
-    b: *Build,
-    exe: *Step.Compile,
-) void {
+fn add_dependencies(b: *Build, exe: *Step.Compile) void {
     const clap = b.dependency("clap", .{});
     exe.root_module.addImport("clap", clap.module("clap"));
 
