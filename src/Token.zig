@@ -5,19 +5,47 @@ const Number = @import("Number.zig").Number;
 const Token = @This();
 pub const TokenList = std.ArrayList(Token);
 
-pub const TokenKind = union(enum) {
+pub const TokenKindTag = enum {
     Var, // 'var'
     Const, // 'const'
 
-    Identifier: []const u8,
-    StringLit: []const u8,
-    NumberLit: Number,
+    Identifier,
+    StringLit,
+    NumberLit,
+    BooleanLit,
 
     Plus, // '+'
     Minus, // '-'
     Star, // '*'
     FSlash, // '/'
     DoubleStar, // '**'
+
+    Eq, // '='
+
+    SemiColon, // ';'
+
+    OpenParen, // '('
+    CloseParen, // ')'
+};
+
+pub const TokenKind = union(TokenKindTag) {
+    Var, // 'var'
+    Const, // 'const'
+
+    Identifier: []const u8,
+    StringLit: []const u8,
+    NumberLit: Number,
+    BooleanLit: bool,
+
+    Plus, // '+'
+    Minus, // '-'
+    Star, // '*'
+    FSlash, // '/'
+    DoubleStar, // '**'
+
+    Eq, // '='
+
+    SemiColon, // ';'
 
     OpenParen, // '('
     CloseParen, // ')'

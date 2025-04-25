@@ -10,6 +10,13 @@ const unicode = std.unicode;
 const Allocator = std.mem.Allocator;
 const Lexer = @This();
 
+pub const KEYWORDS = std.StaticStringMap(TokenKind).initComptime(.{
+    .{ "var", .Var },
+    .{ "const", .Const },
+    .{ "true", TokenKind{ .BooleanLit = true } },
+    .{ "false", TokenKind{ .BooleanLit = false } },
+});
+
 pub const Error = error{
     InvalidToken,
 } || Allocator.Error || std.fmt.ParseFloatError || std.fmt.ParseIntError;
@@ -22,20 +29,7 @@ line: usize = 0,
 column: usize = 0,
 current_char: u21,
 has_error: bool = false,
-
-fn is_numiric(ch: u21) bool {
-    return ch >= '0' and ch <= '9';
-}
-
-fn is_alpha(ch: u21) bool {
-    return (ch >= 'a' and ch <= 'z') or
-        (ch >= 'A' and ch <= 'Z') or
-        ch == '_';
-}
-
-fn is_alphanum(ch: u21) bool {
-    return is_numiric(ch) or is_alpha(ch);
-}
+deinited: bool = false,
 
 pub fn init(allocator: Allocator, content: []const u8) !Lexer {
     const x = try unicode.Utf8View.init(content);
@@ -49,7 +43,9 @@ pub fn init(allocator: Allocator, content: []const u8) !Lexer {
 }
 
 pub fn deinit(self: *Lexer) void {
-    self.tokens.deinit();
+    if (!self.deinited)
+        self.tokens.deinit();
+    self.deinited = true;
 }
 
 pub fn scan(self: *Lexer) Error!TokenList {
@@ -79,9 +75,20 @@ fn scan_lexem(self: *Lexer) Error!void {
         ' ', '\t', '\r', '\n' => {},
 
         '+' => try self.add_token(.Plus),
-        '-' => try self.add_token(.Minus),
+        '-' => {
+            if (self.match('-')) {
+                while (self.peek() != '\n' and !self.is_at_end())
+                    _ = self.advance();
+            } else {
+                try self.add_token(.Minus);
+            }
+        },
         '*' => try self.add_token(if (self.match('*')) .DoubleStar else .Star),
         '/' => try self.add_token(.FSlash),
+
+        '=' => try self.add_token(.Eq),
+
+        ';' => try self.add_token(.SemiColon),
 
         '(' => try self.add_token(.OpenParen),
         ')' => try self.add_token(.CloseParen),
@@ -107,7 +114,10 @@ fn scan_identifier(self: *Lexer) Error!void {
     }
 
     const lexem = self.get_lexem();
-    try self.add_token(TokenKind{ .Identifier = lexem });
+
+    const kind = KEYWORDS.get(lexem) orelse TokenKind{ .Identifier = lexem };
+
+    try self.add_token(kind);
 }
 
 fn scan_number(self: *Lexer) Error!void {
@@ -191,4 +201,18 @@ inline fn get_current(self: *const Lexer) usize {
 
 inline fn get_content(self: *const Lexer) []const u8 {
     return self.chars.bytes;
+}
+
+fn is_numiric(ch: u21) bool {
+    return ch >= '0' and ch <= '9';
+}
+
+fn is_alpha(ch: u21) bool {
+    return (ch >= 'a' and ch <= 'z') or
+        (ch >= 'A' and ch <= 'Z') or
+        ch == '_';
+}
+
+fn is_alphanum(ch: u21) bool {
+    return is_numiric(ch) or is_alpha(ch);
 }
