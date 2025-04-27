@@ -84,7 +84,8 @@ fn scan_lexem(self: *Lexer) Error!void {
                 try self.add_token(.Minus);
             }
         },
-        '*' => try self.add_token(if (self.match('*')) .DoubleStar else .Star),
+        '*' => try self.add_token(.Star),
+        '^' => try self.add_token(.DoubleStar),
         '/' => try self.add_token(.FSlash),
 
         '=' => try self.add_token(.Eq),

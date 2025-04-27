@@ -20,7 +20,7 @@ pub const TokenKindTag = enum {
     Minus, // '-'
     Star, // '*'
     FSlash, // '/'
-    DoubleStar, // '**'
+    DoubleStar, // '^'
 
     Eq, // '='
 
@@ -45,7 +45,7 @@ pub const TokenKind = union(TokenKindTag) {
     Minus, // '-'
     Star, // '*'
     FSlash, // '/'
-    DoubleStar, // '**'
+    DoubleStar, // '^'
 
     Eq, // '='
 
