@@ -1,6 +1,7 @@
 const std = @import("std");
+const root = @import("root");
 
-const Number = @import("Number.zig").Number;
+const Number = root.Number;
 
 const Token = @This();
 pub const TokenList = std.ArrayList(Token);
@@ -20,10 +21,12 @@ pub const TokenKindTag = enum {
     Minus, // '-'
     Star, // '*'
     FSlash, // '/'
-    DoubleStar, // '^'
+    Hat, // '^'
 
     Eq, // '='
 
+    QuestionMark, // '?'
+    Colon, // ':'
     SemiColon, // ';'
 
     OpenParen, // '('
@@ -45,10 +48,12 @@ pub const TokenKind = union(TokenKindTag) {
     Minus, // '-'
     Star, // '*'
     FSlash, // '/'
-    DoubleStar, // '^'
+    Hat, // '^'
 
     Eq, // '='
 
+    QuestionMark, // '?'
+    Colon, // ':'
     SemiColon, // ';'
 
     OpenParen, // '('
@@ -104,4 +109,14 @@ pub fn print_list(self: TokenList) void {
         std.debug.print(",\n", .{});
     }
     std.debug.print("]\n", .{});
+}
+
+pub fn get_id(self: Token) ?[]const u8 {
+    if (self.kind == .Identifier)
+        return self.lexem;
+    return null;
+}
+
+pub fn get_id_panic(self: Token) []const u8 {
+    return self.get_id() orelse @panic("Expected to be identifier.");
 }

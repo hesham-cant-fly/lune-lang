@@ -55,8 +55,12 @@ fn compile_lua_stmt(stmt: AST.Stmt, res: *String) Error!void {
             try res.appendSlice("local ");
             try res.appendSlice(con.name.lexem);
             try res.appendSlice(" = ");
-            try compile_lua_expr(con.value, res);
-            res.items.len -= 1;
+            if (con.value) |value| {
+                try compile_lua_expr(value, res);
+                res.items.len -= 1;
+            } else {
+                try res.appendSlice("nil");
+            }
         },
         .Expr => |expr| {
             try compile_lua_expr(expr, res);
@@ -110,7 +114,7 @@ fn compile_lua_op(tok: Token, res: *String) Error!void {
         .Minus => "- ",
         .Star => "* ",
         .FSlash => "// ",
-        .DoubleStar => "^ ",
+        .Hat => "^ ",
 
         else => unreachable,
     });

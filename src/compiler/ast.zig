@@ -18,14 +18,18 @@ pub const Program = struct {
 };
 
 pub const StmtNode = union(enum) {
-    Var: struct {
+    pub const VarNode = struct {
         name: Token,
+        tp: ?Type,
         value: ?Expr,
-    },
-    Const: struct {
+    };
+    pub const ConstNode = struct {
         name: Token,
-        value: Expr,
-    },
+        tp: ?Type,
+        value: ?Expr,
+    };
+    Var: VarNode,
+    Const: ConstNode,
     Expr: Expr,
 
     pub fn create(allocator: Allocator, value: StmtNode) Allocator.Error!*StmtNode {
@@ -51,36 +55,80 @@ pub const Stmt = struct {
     pub fn deinit(self: Stmt, allocator: Allocator) void {
         switch (self.node.*) {
             StmtNode.Var => |vr| {
+                if (vr.tp) |tp| {
+                    tp.deinit(allocator);
+                }
                 if (vr.value) |value| {
                     value.deinit(allocator);
                 }
             },
             StmtNode.Const => |cons| {
-                cons.value.deinit(allocator);
+                if (cons.tp) |tp| {
+                    tp.deinit(allocator);
+                }
+                if (cons.value) |value| {
+                    value.deinit(allocator);
+                }
             },
-            StmtNode.Expr => |expr| {
-                expr.deinit(allocator);
-            },
+            StmtNode.Expr => |expr| expr.deinit(allocator),
         }
         allocator.destroy(self.node);
     }
 };
 
+pub const TypeNode = union(enum) {
+    Optional: Type,
+    Identifier: Token,
+
+    pub fn create(allocator: Allocator, value: TypeNode) Allocator.Error!*TypeNode {
+        const result = try allocator.create(TypeNode);
+        result.* = value;
+        return result;
+    }
+};
+
+pub const Type = struct {
+    start: Token,
+    end: Token,
+    node: *const TypeNode,
+
+    pub fn init(start: Token, end: Token, node: *const Type) Type {
+        return .{
+            .start = start,
+            .end = end,
+            .node = node,
+        };
+    }
+
+    pub fn deinit(self: Type, allocator: Allocator) void {
+        switch (self.node.*) {
+            TypeNode.Optional => |opt| {
+                opt.deinit(allocator);
+            },
+            TypeNode.Identifier => {},
+        }
+
+        allocator.destroy(self.node);
+    }
+};
+
 pub const ExprNode = union(enum) {
-    Binray: struct {
+    pub const BinaryNode = struct {
         lhs: Expr,
         rhs: Expr,
         op: Token,
-    },
-    Unary: struct {
+    };
+    pub const UnaryNode = struct {
         rhs: Expr,
         op: Token,
-    },
+    };
+    Grouping: Expr,
+    Binray: BinaryNode,
+    Unary: UnaryNode,
     String: Token,
     Number: Token,
     Identifier: Token,
     Boolean: Token,
-    Grouping: Expr,
     Nil: Token,
 
     pub fn create(allocator: Allocator, value: ExprNode) Allocator.Error!*ExprNode {

@@ -1,18 +1,21 @@
 const std = @import("std");
+const mem = std.mem;
 
 const pretty = @import("pretty");
 
-const mem = std.mem;
-
-pub const AST = @import("./ast.zig");
-const Lexer = @import("./Lexer.zig");
-const Parser = @import("./Parser.zig");
-const Transpiler = @import("./Transpiler.zig");
-pub const Number = @import("./Number.zig").Number;
-pub const Token = @import("./Token.zig");
+const Analyzer = @import("./compiler/Analyzer.zig");
+pub const AST = @import("./compiler/ast.zig");
+const Lexer = @import("./compiler/Lexer.zig");
+const Parser = @import("./compiler/Parser.zig");
+pub const Symbol = @import("./compiler/Symbol.zig");
+pub const Token = @import("./compiler/Token.zig");
 pub const TokenKindTag = Token.TokenKindTag;
 pub const TokenKind = Token.TokenKind;
 pub const TokenList = Token.TokenList;
+const Transpiler = @import("./compiler/Transpiler.zig");
+pub const Type = @import("./compiler/Type.zig");
+pub const TSAST = @import("./compiler/typesafe_ast.zig");
+pub const Number = @import("./Number.zig").Number;
 
 const str = []const u8;
 
@@ -33,18 +36,23 @@ pub fn main() !void {
     lxr.deinit();
     defer ast.deinit(allocator);
 
-    // try pretty.print(allocator, ast, .{});
-    const tr = Transpiler.init(allocator, ast);
-    const res = try tr.compile(.Lua);
-    defer res.deinit();
+    var analyzer = try Analyzer.init(allocator, ast);
+    defer analyzer.deinit();
 
-    const out_file = try std.fs.cwd().createFile("./out.lua", .{
-        .truncate = true,
-    });
-    defer out_file.close();
+    const tsast = try analyzer.analyze();
+    defer tsast.deinit(allocator);
+    try pretty.print(allocator, tsast, .{});
+    // const tr = Transpiler.init(allocator, ast);
+    // const res = try tr.compile(.Lua);
+    // defer res.deinit();
 
-    std.debug.print("{s}\n", .{res.items});
-    try out_file.writeAll(res.items);
+    // const out_file = try std.fs.cwd().createFile("./out.lua", .{
+    //     .truncate = true,
+    // });
+    // defer out_file.close();
+
+    // std.debug.print("{s}\n", .{res.items});
+    // try out_file.writeAll(res.items);
 }
 
 fn read_file_to_slice(allocator: mem.Allocator, path: str) !str {

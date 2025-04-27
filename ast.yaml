@@ -1,0 +1,73 @@
+  .node: *const ast.ExprNode
+    .Binray: ast.ExprNode__struct_24123
+      .lhs: ast.Expr
+        .node: *const ast.ExprNode
+          .Number: Token
+            .lexem: []const u8
+              "123"
+      .rhs: ast.Expr
+        .node: *const ast.ExprNode
+          .Number: Token
+            .lexem: []const u8
+              "1"
+      .op: Token
+        .lexem: []const u8
+          "**"de
+          .Number: Token
+            .kind: Token.TokenKind
+              .NumberLit: Number.Number
+            .lexem: []const u8
+              "1"
+            .line: usize = 0
+            .column: usize = 0
+      .op: Token
+        .kind: Token.TokenKind
+          .DoubleStar: void = void
+        .lexem: []const u8
+          "**"
+        .line: usize = 0
+        .column: usize = 0i64 = 123
+          .lexem: []const u8
+            "123"
+          .line: usize = 0
+          .column: usize = 0
+        .node: *const ast.ExprNode
+          .Number: Token
+            .kind: Token.TokenKind
+              .NumberLit: Number.Number
+            .lexem: []const u8
+              "123"
+            .line: usize = 0
+            .column: usize = 0
+      .rhs: ast.Expr
+        .start: Token
+          .kind: Token.TokenKind
+            .NumberLit: Number.Number
+              .Int: i64 = 1
+          .lexem: []const u8
+            "1"
+          .line: usize = 0
+          .column: usize = 0
+        .end: Token
+          .kind: Token.TokenKind
+            .NumberLit: Number.Number
+              .Int: i64 = 1
+          .lexem: []const u8
+            "1"
+          .line: usize = 0
+          .column: usize = 0
+        .node: *const ast.ExprNode
+          .Number: Token
+            .kind: Token.TokenKind
+              .NumberLit: Number.Number
+            .lexem: []const u8
+              "1"
+            .line: usize = 0
+            .column: usize = 0
+      .op: Token
+        .kind: Token.TokenKind
+          .DoubleStar: void = void
+        .lexem: []const u8
+          "**"
+        .line: usize = 0
+        .column: usize = 0

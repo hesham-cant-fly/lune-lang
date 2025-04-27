@@ -1,0 +1,65 @@
+
+- [-] Compatibility with lua [0%]
+  - [-] Comments [50%]
+    - [X] Single line comments
+    - [ ] Multi line comments
+  - [-] Constants [50%]
+    - [X] ~nil~
+    - [X] ~true~ ~false~
+    - [X] numbers
+    - [-] Single line string [50%]
+      - [ ] Single Quotes ~''~
+      - [X] Double Quotes ~""~
+    - [ ] Multi line strings
+    - [ ] Tables [0%]
+      - [ ] array-like table
+      - [ ] dictionary-like table
+      - [ ] Mixed table
+  - [-] Operators [0%]
+    - [ ] this thing ~local a, b = 10, 3~
+    - [ ] string concatenation ~..~
+    - [-] Arithmetic [83%]
+      - [X] ~+~
+      - [X] ~-~
+      - [X] ~*~
+      - [X] ~/~
+      - [ ] ~%~
+      - [X] ~^~
+    - [-] Comparison [83%]
+      - [X] ~==~
+      - [ ] ~~=~
+      - [X] ~<~
+      - [X] ~>~
+      - [X] ~<=~
+      - [X] ~>=~
+    - [ ] Logical [0%]
+      - [ ] ~and~
+      - [ ] ~or~
+      - [ ] ~not~
+  - [ ] Control Flow [0%]
+    - [ ] If statement
+    - [ ] While loop
+    - [ ] Repeat loop
+    - [ ] For loop [0%]
+      - [ ] Numeric
+        #+begin_src lua
+for k = 1, 10, 2 do  -- start, end, step
+    print("Numeric for:", k)
+end
+        #+end_src
+      - [ ] Generic for loop with ~pairs~
+        #+begin_src lua
+for key, value in pairs(dictLike) do
+    print("Key:", key, "Value:", value)
+end
+        #+end_src
+      - [ ] Generic for loop with ~ipairs~
+        #+begin_src lua
+for index, value in ipairs(arrayLike) do
+    print("Index:", index, "Value:", value)
+end
+        #+end_src
+  - [ ] Functions [0%]
+    - [ ] Basic function
+    - [ ] Variable number of arguments
+    - [ ] Anonymous functions

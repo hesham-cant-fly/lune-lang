@@ -1,8 +1,8 @@
 -- Comment
-var x   = 10;
-var y   = 20;
-var z   = x + y;
-var a;
-const B = a;
+var x: number = 10;
+var y: number = 20;
+var z: number = x + y;
+var a: number = z ^ 2;
+const B: number = a;
 
-const Z = B - nil;
+const Z: number = B - nil;

@@ -81,7 +81,11 @@ fn parse_expr_stmt(self: *Parser) Error!*const AST.StmtNode {
 
 fn parse_var_stmt(self: *Parser) Error!*const AST.StmtNode {
     const name = try self.consume(.Identifier, "Expected a name.");
-    const value = if (self.consume_optional(.Eq) != null)
+    const tp = if (self.match_one(.Colon) != null)
+        try self.parse_type()
+    else
+        null;
+    const value = if (self.match_one(.Eq) != null)
         try self.parse_expr()
     else
         null;
@@ -90,6 +94,7 @@ fn parse_var_stmt(self: *Parser) Error!*const AST.StmtNode {
     return try AST.StmtNode.create(self.allocator, .{
         .Var = .{
             .name = name,
+            .tp = tp,
             .value = value,
         },
     });
@@ -97,16 +102,47 @@ fn parse_var_stmt(self: *Parser) Error!*const AST.StmtNode {
 
 fn parse_const_stmt(self: *Parser) Error!*const AST.StmtNode {
     const name = try self.consume(.Identifier, "Expected a name.");
-    // TODO: Better error report
-    _ = try self.consume(.Eq, "Expected '=' since a constant declaration is a single assignment.");
-    const value = try self.parse_expr();
+    const tp = if (self.match_one(.Colon) != null)
+        try self.parse_type()
+    else
+        null;
+    const value = if (self.match_one(.Eq) != null)
+        try self.parse_expr()
+    else
+        null;
     _ = try self.consume(.SemiColon, "Expected a semin colon ';' at the end of a constant declaration.");
 
     return try AST.StmtNode.create(self.allocator, .{
         .Const = .{
             .name = name,
+            .tp = tp,
             .value = value,
         },
+    });
+}
+
+fn parse_type(self: *Parser) Error!AST.Type {
+    const start = self.peek();
+    const node = switch (self.peek().kind) {
+        .Identifier => |_| try AST.TypeNode.create(self.allocator, .{
+            .Identifier = self.advance(),
+        }),
+        .QuestionMark => try self.parse_optional_type(),
+        else => return Error.InvalidToken,
+    };
+    const end = self.previous();
+
+    return .{
+        .start = start,
+        .end = end,
+        .node = node,
+    };
+}
+
+fn parse_optional_type(self: *Parser) Error!*const AST.TypeNode {
+    const child_type = try self.parse_type();
+    return AST.TypeNode.create(self.allocator, .{
+        .Optional = child_type,
     });
 }
 
@@ -156,7 +192,7 @@ fn parse_power(self: *Parser) Error!AST.Expr {
     var lhs = try self.parse_unary();
     errdefer lhs.deinit(self.allocator);
 
-    while (self.match_one(.DoubleStar)) |op| {
+    while (self.match_one(.Hat)) |op| {
         const rhs = try self.parse_unary();
         const node = try AST.ExprNode.create(self.allocator, .{
             .Binray = .{
