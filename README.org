@@ -1,1 +1,13 @@
 #+title: lune programming language
+
+The only change is that you can't define global variables like this
+#+begin_src lua
+x = 10
+#+end_src
+
+you have to use ~global~ keyword instead.
+#+begin_src lune
+global x = 10;
+#+end_src
+
+and I'm planing to make the semicolon optional.
