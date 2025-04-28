@@ -1,13 +1,13 @@
 const std = @import("std");
+const unicode = std.unicode;
+const Allocator = std.mem.Allocator;
 const root = @import("root");
-
 const Number = root.Number;
 const Token = root.Token;
 const TokenList = root.TokenList;
 const TokenKind = root.TokenKind;
+const Reporter = root.Report;
 
-const unicode = std.unicode;
-const Allocator = std.mem.Allocator;
 const Lexer = @This();
 
 pub const KEYWORDS = std.StaticStringMap(TokenKind).initComptime(.{
@@ -23,16 +23,18 @@ pub const Error = error{
 } || Allocator.Error || std.fmt.ParseFloatError || std.fmt.ParseIntError;
 
 chars: unicode.Utf8Iterator,
+path: []const u8,
 tokens: TokenList,
 start: usize = 0,
 current: usize = 0,
-line: usize = 0,
+line: usize = 1,
 column: usize = 0,
 current_char: u21,
+previous_char: u21,
 has_error: bool = false,
 deinited: bool = false,
 
-pub fn init(allocator: Allocator, content: []const u8) !Lexer {
+pub fn init(allocator: Allocator, content: []const u8, path: []const u8) !Lexer {
     const x = try unicode.Utf8View.init(content);
     var iter = x.iterator();
     const current_char = iter.nextCodepoint() orelse 0;
@@ -40,6 +42,8 @@ pub fn init(allocator: Allocator, content: []const u8) !Lexer {
         .chars = iter,
         .tokens = TokenList.init(allocator),
         .current_char = current_char,
+        .previous_char = 0,
+        .path = path,
     };
 }
 
@@ -58,14 +62,15 @@ pub fn scan(self: *Lexer) Error!TokenList {
 
         self.scan_lexem() catch |err| {
             if (err != Error.InvalidToken) return err;
+            self.report_error("Invalid character `{u}`.", .{
+                self.previous(),
+            });
             self.has_error = true;
         };
     }
 
-    if (self.has_error) {
-        std.debug.print("A lixical error.\n", .{});
+    if (self.has_error)
         return Error.InvalidToken;
-    }
     return self.tokens;
 }
 
@@ -73,7 +78,11 @@ fn scan_lexem(self: *Lexer) Error!void {
     const ch = self.advance();
 
     switch (ch) {
-        ' ', '\t', '\r', '\n' => {},
+        ' ', '\t', '\r' => {},
+        '\n' => {
+            self.line += 1;
+            self.column = 0;
+        },
 
         '+' => try self.add_token(.Plus),
         '-' => {
@@ -105,7 +114,6 @@ fn scan_lexem(self: *Lexer) Error!void {
             } else if (is_alpha(ch)) {
                 try self.scan_identifier();
             } else {
-                std.debug.print("Error: Invalid token `{u}`\n", .{ch});
                 return Error.InvalidToken;
             }
         },
@@ -157,14 +165,14 @@ fn scan_string(self: *Lexer) Error!void {
 
 fn add_token(self: *Lexer, kind: TokenKind) Error!void {
     const lexem = self.get_lexem();
-    try self.tokens.append(
-        Token.init(
-            kind,
-            lexem,
-            self.line,
-            self.column,
-        ),
+    var token = Token.init(
+        kind,
+        lexem,
+        self.line,
+        self.column,
     );
+    token.index = self.start;
+    try self.tokens.append(token);
 }
 
 fn match(self: *Lexer, ch: u21) bool {
@@ -179,16 +187,23 @@ fn advance(self: *Lexer) u21 {
     if (self.is_at_end()) return 0;
     const prev = self.current_char;
     self.current_char = self.chars.nextCodepoint() orelse 0;
+    self.previous_char = prev;
 
     var code_point: [4]u8 = undefined;
     const size = unicode.utf8Encode(self.current_char, &code_point) catch unreachable;
     self.current += size;
+
+    self.column += 1;
 
     return prev;
 }
 
 inline fn peek(self: *const Lexer) u21 {
     return self.current_char;
+}
+
+inline fn previous(self: *const Lexer) u21 {
+    return self.previous_char;
 }
 
 fn is_at_end(self: *const Lexer) bool {
@@ -205,6 +220,19 @@ inline fn get_current(self: *const Lexer) usize {
 
 inline fn get_content(self: *const Lexer) []const u8 {
     return self.chars.bytes;
+}
+
+fn report_error(self: *const Lexer, comptime msg: []const u8, args: anytype) void {
+    Reporter.report_pro(
+        self.get_content(),
+        self.path,
+        self.current,
+        self.line,
+        self.column,
+        .Error,
+        msg,
+        args,
+    );
 }
 
 fn is_numiric(ch: u21) bool {

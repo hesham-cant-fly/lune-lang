@@ -85,6 +85,7 @@ kind: TokenKind,
 lexem: []const u8,
 line: usize,
 column: usize,
+index: usize = 0,
 
 pub fn init(kind: TokenKind, lexem: []const u8, line: usize, column: usize) Token {
     return .{

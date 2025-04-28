@@ -7,6 +7,7 @@ const Analyzer = @import("./compiler/Analyzer.zig");
 pub const AST = @import("./compiler/ast.zig");
 const Lexer = @import("./compiler/Lexer.zig");
 const Parser = @import("./compiler/Parser.zig");
+pub const Report = @import("./compiler/reporter.zig");
 pub const Symbol = @import("./compiler/Symbol.zig");
 pub const Token = @import("./compiler/Token.zig");
 pub const TokenKindTag = Token.TokenKindTag;
@@ -27,7 +28,7 @@ pub fn main() !void {
     const content = try read_file_to_slice(allocator, "main.lune");
     defer allocator.free(content);
 
-    var lxr = try Lexer.init(allocator, content);
+    var lxr = try Lexer.init(allocator, content, "main.lune");
     errdefer lxr.deinit();
 
     const tokens = try lxr.scan();
@@ -55,7 +56,7 @@ pub fn main() !void {
     // try out_file.writeAll(res.items);
 }
 
-fn read_file_to_slice(allocator: mem.Allocator, path: str) !str {
+pub fn read_file_to_slice(allocator: mem.Allocator, path: str) !str {
     const file = try std.fs.cwd().openFile(path, .{
         .mode = .read_only,
     });
