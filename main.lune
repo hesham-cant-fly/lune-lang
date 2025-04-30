@@ -1,9 +1,8 @@
 -- Comment
-var x$ number = 10;
-x ° u;
--- var y: number = 20;
--- var z: number = x + y;
--- var a: number = z ^ 2;
--- const B: number = a;
---
--- const Z: number = B - nil;
+var x = 30; -- type inference
+var y: string = 20; -- type error
+var z: number = x + nil; -- type error
+var a: number = z ^ x;
+const B: number = a - 1;
+
+const Z: number = B - 10;

@@ -11,6 +11,8 @@ const Type = @This();
 pub const Error = error{
     UndefinedType,
     ArithmaticOnNonNumber,
+    ArithmaticOnNonNumberLeft,
+    ArithmaticOnNonNumberRight,
 } || Allocator.Error;
 
 pub const Callable = struct {
@@ -43,6 +45,7 @@ pub const TypeKind = union(enum) {
     Optional: *const Type,
     Reference: *const Symbol,
     Auto,
+    Any,
 
     pub fn create(allocator: Allocator, value: Type) Allocator.Error!*Type {
         const result = try allocator.create(Type);
@@ -95,6 +98,35 @@ pub fn is_number(self: Type) bool {
     };
 }
 
+pub fn is_auto(self: Type) bool {
+    return switch (self.kind) {
+        .Auto => true,
+        else => false,
+    };
+}
+
+pub fn matches(self: Type, other: Type) bool {
+    switch (self.kind) {
+        .Primitive => |v| {
+            if (other.kind != .Primitive) return false;
+            return v == other.kind.Primitive;
+        },
+        .Optional => |v| {
+            if (other.kind != .Optional) return false;
+            return v.matches(other.kind.Optional.*);
+        },
+        .Reference => |sym| {
+            return sym.value_type.matches(other);
+        },
+        .Function => @panic("tood"),
+        .Auto, .Any => return true,
+    }
+}
+
+pub inline fn can_assign(self: Type, other: Type) bool {
+    return self.matches(other);
+}
+
 pub fn binary_op(
     self: Type,
     op: Token,
@@ -102,8 +134,11 @@ pub fn binary_op(
 ) Error!Type {
     switch (op.kind) {
         .Plus, .Minus, .Star, .FSlash, .Hat => {
-            if (!self.is_number() or !rhs.is_number()) {
-                return Error.ArithmaticOnNonNumber;
+            if (!self.is_number()) {
+                return Error.ArithmaticOnNonNumberLeft;
+            }
+            if (!rhs.is_number()) {
+                return Error.ArithmaticOnNonNumberRight;
             }
             return Type{
                 .kind = .{ .Primitive = .Number },

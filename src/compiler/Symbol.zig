@@ -52,6 +52,11 @@ pub const SymbolTable = struct {
             "string",
             Symbol.init_type("string", Type.init(.{ .Primitive = .String })),
         );
+        try res.put(
+            allocator,
+            "auto",
+            Symbol.init_type("auto", Type.init(.Auto)),
+        );
 
         return res;
     }
@@ -86,24 +91,25 @@ pub const SymbolTable = struct {
         try scope.put(self.allocator, name.lexem, symbol);
     }
 
-    pub fn define(self: *SymbolTable, name: Token, tp: Type) Error!void {
+    pub fn define(self: *SymbolTable, name: Token) Error!void {
         const scope = self.get_current_scope();
         if (scope.get(name.lexem) != null) return Error.RedefinitionOfVariable;
-        try scope.put(self.allocator, name.lexem, Symbol.init(name, tp));
+        try scope.put(self.allocator, name.lexem, Symbol.init_unknown(name));
     }
 
-    pub fn define_constant(self: *SymbolTable, name: Token, tp: Type) Error!void {
+    pub fn define_constant(self: *SymbolTable, name: Token) Error!void {
         const scope = self.get_current_scope();
         if (scope.get(name.lexem) != null) return Error.RedefinitionOfVariable;
-        var symbol = Symbol.init(name, tp);
+        var symbol = Symbol.init_unknown(name);
         symbol.constant = true;
         try scope.put(self.allocator, name.lexem, symbol);
     }
 
-    pub fn declare(self: *SymbolTable, name: Token) void {
+    pub fn declare(self: *SymbolTable, name: Token, tp: Type) void {
         const scope = self.get_current_scope();
         if (scope.getPtr(name.lexem)) |vr| {
             vr.decalred = true;
+            vr.value_type = tp;
             return;
         }
         @panic("Declaring undefined variable");
@@ -183,6 +189,14 @@ pub fn init(name: Token, value_type: Type) Symbol {
     return Symbol{
         .name = name,
         .value_type = value_type,
+        .comptime_value = null,
+    };
+}
+
+pub fn init_unknown(name: Token) Symbol {
+    return Symbol{
+        .name = name,
+        .value_type = .{ .kind = .Auto },
         .comptime_value = null,
     };
 }

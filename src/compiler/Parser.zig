@@ -5,6 +5,7 @@ const Token = root.Token;
 const TokenKindTag = root.TokenKindTag;
 const TokenKind = root.TokenKind;
 const AST = root.AST;
+const Report = root.Report;
 
 const Parser = @This();
 pub const Error = error{
@@ -14,15 +15,21 @@ pub const Error = error{
     InvalidOperator,
     InvalidNumber,
     InvalidString,
+    ParsingError,
 } || mem.Allocator.Error;
 
 allocator: mem.Allocator,
+path: []const u8,
+content: []const u8,
 tokens: []const Token,
 index: usize = 0,
+has_error: bool = false,
 
-pub fn init(allocator: mem.Allocator, tokens: []const Token) Parser {
+pub fn init(allocator: mem.Allocator, tokens: []const Token, content: []const u8, path: []const u8) Parser {
     return Parser{
         .allocator = allocator,
+        .path = path,
+        .content = content,
         .tokens = tokens,
     };
 }
@@ -38,7 +45,13 @@ pub fn parse(self: *Parser) Error!AST.Program {
     }
 
     while (!self.is_at_end()) {
-        const stmt = try self.parse_stmt();
+        const stmt = self.parse_stmt() catch |err| {
+            if (err == Error.OutOfMemory)
+                return err;
+            self.sync();
+            self.has_error = true;
+            continue;
+        };
         errdefer stmt.deinit(self.allocator);
 
         try body.append(stmt);
@@ -46,6 +59,10 @@ pub fn parse(self: *Parser) Error!AST.Program {
 
     body.shrinkAndFree(body.items.len);
     const end = self.previous();
+
+    if (self.has_error) {
+        return Error.ParsingError;
+    }
 
     return .{
         .start = start,
@@ -85,11 +102,13 @@ fn parse_var_stmt(self: *Parser) Error!*const AST.StmtNode {
         try self.parse_type()
     else
         null;
+    errdefer if (tp) |t| t.deinit(self.allocator);
     const value = if (self.match_one(.Eq) != null)
         try self.parse_expr()
     else
         null;
-    _ = try self.consume(.SemiColon, "Expected a semi colon ';' at the end of a variable declaration.");
+    errdefer if (value) |v| v.deinit(self.allocator);
+    _ = try self.consume_semicolon("Expected a semicolon ';' at the end of a variable declaration.");
 
     return try AST.StmtNode.create(self.allocator, .{
         .Var = .{
@@ -106,11 +125,13 @@ fn parse_const_stmt(self: *Parser) Error!*const AST.StmtNode {
         try self.parse_type()
     else
         null;
+    errdefer if (tp) |t| t.deinit(self.allocator);
     const value = if (self.match_one(.Eq) != null)
         try self.parse_expr()
     else
         null;
-    _ = try self.consume(.SemiColon, "Expected a semin colon ';' at the end of a constant declaration.");
+    errdefer if (value) |v| v.deinit(self.allocator);
+    _ = try self.consume_semicolon("Expected a semicolon ';' at the end of a constant declaration.");
 
     return try AST.StmtNode.create(self.allocator, .{
         .Const = .{
@@ -287,20 +308,36 @@ fn parse_primary(self: *Parser) Error!AST.Expr {
         );
     }
 
-    std.debug.print("Invalid Token: '{s}'\n", .{self.peek().lexem});
+    const tok = self.peek();
+    self.report_error("Invalid Token: '{s}'.", .{tok.lexem}, tok, .{
+        .msg = "Expected an expression.",
+        .len = tok.len,
+        .column = tok.column,
+    });
     return Error.InvalidToken;
-}
-
-fn consume_optional(self: *Parser, kind: TokenKind) ?Token {
-    if (self.check(kind)) return self.advance();
-    return null;
 }
 
 fn consume(self: *Parser, kind: TokenKindTag, msg: []const u8) Error!Token {
     if (self.check(kind))
         return self.advance();
 
-    std.debug.print("{s}\n", .{msg});
+    self.report_error("{s}", .{msg}, self.peek(), Report.Caret{
+        .msg = msg,
+        .column = self.peek().column,
+        .len = self.peek().lexem.len,
+    });
+    return error.InvalidToken;
+}
+
+fn consume_semicolon(self: *Parser, msg: []const u8) Error!Token {
+    if (self.check(.SemiColon))
+        return self.advance();
+
+    self.report_error("{s}", .{msg}, self.previous(), Report.Caret{
+        .msg = msg,
+        .column = self.previous().column,
+        .len = self.previous().lexem.len,
+    });
     return error.InvalidToken;
 }
 
@@ -341,4 +378,39 @@ fn advance(self: *Parser) Token {
 
 fn is_at_end(self: *const Parser) bool {
     return self.index >= self.tokens.len;
+}
+
+fn sync(self: *Parser) void {
+    _ = self.advance();
+    while (!self.is_at_end()) {
+        switch (self.peek().kind) {
+            .Var, .Const => return,
+            .SemiColon => {
+                _ = self.advance();
+                return;
+            },
+            else => {},
+        }
+        _ = self.advance();
+    }
+}
+
+fn report_error(
+    self: *const Parser,
+    comptime fmt: []const u8,
+    args: anytype,
+    tok: Token,
+    caret: Report.Caret,
+) void {
+    Report.report_pro(
+        self.content,
+        self.path,
+        caret,
+        tok.index,
+        tok.line,
+        tok.column,
+        .Error,
+        fmt,
+        args,
+    );
 }

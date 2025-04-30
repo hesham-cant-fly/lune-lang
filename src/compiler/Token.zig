@@ -65,17 +65,27 @@ pub const TokenKind = union(TokenKindTag) {
             .Var => sprint("Var", .{}),
             .Const => sprint("Const", .{}),
 
+            .Nil => sprint("Nil", .{}),
+
             .Identifier => |id| sprint("Identifer({s})", .{id}),
             .StringLit => |str| sprint("StringLit({s})", .{str}),
             .NumberLit => |num| num.print(),
+            .BooleanLit => |v| sprint("Boolean({})", .{v}),
 
             .Plus => sprint("Plus", .{}),
             .Minus => sprint("Minus", .{}),
             .Star => sprint("Star", .{}),
             .FSlash => sprint("FSlash", .{}),
-            .DoubleStar => sprint("DoubleStar", .{}),
+            .Hat => sprint("DoubleStar", .{}),
 
-            .OpenParen => sprint("OpenParen", .{}),
+            .Eq => sprint("Eq", .{}),
+
+            .QuestionMark => sprint("QuestionMark", .{}),
+            .Colon => sprint("Colon", .{}),
+            .SemiColon => sprint("SemiColon", .{}),
+
+            .OpenParen,
+            => sprint("OpenParen", .{}),
             .CloseParen => sprint("CloseParen", .{}),
         }
     }
@@ -86,6 +96,7 @@ lexem: []const u8,
 line: usize,
 column: usize,
 index: usize = 0,
+len: usize = 0,
 
 pub fn init(kind: TokenKind, lexem: []const u8, line: usize, column: usize) Token {
     return .{

@@ -1,7 +1,7 @@
 const std = @import("std");
 const root = @import("root");
-
 const Token = root.Token;
+const termcolor = root.termcolor;
 
 pub const ReportKind = enum(u8) {
     Error,
@@ -10,23 +10,26 @@ pub const ReportKind = enum(u8) {
 
     pub fn to_string(self: ReportKind) []const u8 {
         return switch (self) {
-            .Error => "Error",
-            .Warning => "Warning",
-            .Info => "Info",
+            .Error => termcolor.ANSI_CODE_BOLD ++ termcolor.ANSI_CODE_RED ++ "Error" ++ termcolor.ANSI_CODE_RESET,
+            .Warning => termcolor.ANSI_CODE_BOLD ++ termcolor.ANSI_CODE_YELLOW ++ "Warning" ++ termcolor.ANSI_CODE_RESET,
+            .Info => termcolor.ANSI_CODE_BOLD ++ termcolor.ANSI_CODE_CYAN ++ "Info" ++ termcolor.ANSI_CODE_RESET,
         };
     }
 };
 
-pub const Report = struct {
-    kind: ReportKind,
-    token: Token,
-    path: []const u8,
-    message: []const u8,
+pub const Caret = struct {
+    msg: []const u8,
+    caret: []const u8 = "^",
+    len: usize = 1,
+    at: usize = 0,
+    column: usize = 0,
+    line: usize = 0,
 };
 
 pub fn report_pro(
     content: []const u8,
     path: []const u8,
+    caret: Caret,
     at: usize,
     line: usize,
     column: usize,
@@ -36,24 +39,32 @@ pub fn report_pro(
 ) void {
     const lines = get_line(content, at);
 
-    std.debug.print("{s}:{}:{}: {s}: ", .{
+    std.debug.print("{s}{s}{s}:{}:{}:{s} {s}: ", .{
+        termcolor.ANSI_CODE_UNDERLINE,
+        termcolor.ANSI_CODE_BOLD,
         path,
         line,
         column,
+        termcolor.ANSI_CODE_RESET,
         kind.to_string(),
     });
 
     std.debug.print(fmt, args);
 
-    const line_chars_width = number_chars_len(usize, line);
+    const line_chars_width = number_chars_len(usize, caret.line);
     std.debug.print("\n {} | {s}\n", .{ line, lines });
 
-    const caret = "^";
+    // const caret = "^";
 
-    std.debug.print("{s:>[1]}\n", .{
-        caret,
-        column + 4 + line_chars_width,
+    var caret_buffer: [40]u8 = undefined;
+    @memset(&caret_buffer, '^');
+
+    std.debug.print("{s:>[1]}{2s} ", .{
+        caret.caret,
+        caret.column + 4 + line_chars_width,
+        caret_buffer[0..caret.len -| 1],
     });
+    std.debug.print("{s}\n", .{caret.msg});
 }
 
 fn get_line(content: []const u8, index: usize) []const u8 {
@@ -77,7 +88,7 @@ fn get_line(content: []const u8, index: usize) []const u8 {
 }
 
 fn number_chars_len(T: type, num: T) usize {
-    var count: usize = 0;
+    var count: usize = 1;
     var n = num;
 
     while (n != 0) : (n /= 10) {

@@ -17,6 +17,7 @@ const Transpiler = @import("./compiler/Transpiler.zig");
 pub const Type = @import("./compiler/Type.zig");
 pub const TSAST = @import("./compiler/typesafe_ast.zig");
 pub const Number = @import("./Number.zig").Number;
+pub const termcolor = @import("./termcolor.zig");
 
 const str = []const u8;
 
@@ -32,28 +33,28 @@ pub fn main() !void {
     errdefer lxr.deinit();
 
     const tokens = try lxr.scan();
-    var parser = Parser.init(allocator, tokens.items);
+    var parser = Parser.init(allocator, tokens.items, content, "main.lune");
     const ast = try parser.parse();
     lxr.deinit();
     defer ast.deinit(allocator);
 
-    var analyzer = try Analyzer.init(allocator, ast);
+    var analyzer = try Analyzer.init(allocator, ast, content, "main.lune");
     defer analyzer.deinit();
 
     const tsast = try analyzer.analyze();
     defer tsast.deinit(allocator);
-    try pretty.print(allocator, tsast, .{});
-    // const tr = Transpiler.init(allocator, ast);
-    // const res = try tr.compile(.Lua);
-    // defer res.deinit();
+    // try pretty.print(allocator, tsast, .{});
+    const tr = Transpiler.init(allocator, tsast);
+    const res = try tr.compile(.Lua);
+    defer res.deinit();
 
-    // const out_file = try std.fs.cwd().createFile("./out.lua", .{
-    //     .truncate = true,
-    // });
-    // defer out_file.close();
+    const out_file = try std.fs.cwd().createFile("./out.lua", .{
+        .truncate = true,
+    });
+    defer out_file.close();
 
-    // std.debug.print("{s}\n", .{res.items});
-    // try out_file.writeAll(res.items);
+    std.debug.print("{s}\n", .{res.items});
+    try out_file.writeAll(res.items);
 }
 
 pub fn read_file_to_slice(allocator: mem.Allocator, path: str) !str {

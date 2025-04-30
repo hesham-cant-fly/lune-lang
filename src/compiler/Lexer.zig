@@ -27,6 +27,7 @@ path: []const u8,
 tokens: TokenList,
 start: usize = 0,
 current: usize = 0,
+current_len: usize = 0,
 line: usize = 1,
 column: usize = 0,
 current_char: u21,
@@ -59,11 +60,18 @@ pub fn scan(self: *Lexer) Error!TokenList {
 
     while (!self.is_at_end()) {
         self.start = self.get_current();
+        self.current_len = 0;
+        defer self.column += self.current_len;
 
         self.scan_lexem() catch |err| {
             if (err != Error.InvalidToken) return err;
             self.report_error("Invalid character `{u}`.", .{
                 self.previous(),
+            }, .{
+                .msg = "Unexpected Char",
+                .at = self.start,
+                .column = self.column,
+                .line = self.line,
             });
             self.has_error = true;
         };
@@ -172,6 +180,7 @@ fn add_token(self: *Lexer, kind: TokenKind) Error!void {
         self.column,
     );
     token.index = self.start;
+    token.len = self.current_len;
     try self.tokens.append(token);
 }
 
@@ -193,7 +202,7 @@ fn advance(self: *Lexer) u21 {
     const size = unicode.utf8Encode(self.current_char, &code_point) catch unreachable;
     self.current += size;
 
-    self.column += 1;
+    self.current_len += 1;
 
     return prev;
 }
@@ -222,15 +231,21 @@ inline fn get_content(self: *const Lexer) []const u8 {
     return self.chars.bytes;
 }
 
-fn report_error(self: *const Lexer, comptime msg: []const u8, args: anytype) void {
+fn report_error(
+    self: *const Lexer,
+    comptime fmt: []const u8,
+    args: anytype,
+    carets: Reporter.Caret,
+) void {
     Reporter.report_pro(
         self.get_content(),
         self.path,
+        carets,
         self.current,
         self.line,
         self.column,
         .Error,
-        msg,
+        fmt,
         args,
     );
 }

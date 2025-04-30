@@ -2,7 +2,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const root = @import("root");
 const Token = root.Token;
-const AST = root.AST;
+const TSAST = root.TSAST;
 
 const String = std.ArrayList(u8);
 const Transpiler = @This();
@@ -10,10 +10,10 @@ const Transpiler = @This();
 pub const Error = error{} || Allocator.Error;
 pub const Target = enum { Lua };
 
-ast: AST.Program,
+ast: TSAST.Program,
 allocator: Allocator,
 
-pub fn init(allocator: Allocator, ast: AST.Program) Transpiler {
+pub fn init(allocator: Allocator, ast: TSAST.Program) Transpiler {
     return .{
         .allocator = allocator,
         .ast = ast,
@@ -30,7 +30,7 @@ fn compile_lua(self: *const Transpiler) Error!String {
     var result = String.init(self.allocator);
     errdefer result.deinit();
 
-    for (self.ast.body) |stmt| {
+    for (self.ast.body.items) |stmt| {
         try compile_lua_stmt(stmt, &result);
     }
     // try compile_lua_expr(self.ast, &result);
@@ -38,11 +38,11 @@ fn compile_lua(self: *const Transpiler) Error!String {
     return result;
 }
 
-fn compile_lua_stmt(stmt: AST.Stmt, res: *String) Error!void {
-    switch (stmt.node.*) {
+fn compile_lua_stmt(stmt: TSAST.Stmt, res: *String) Error!void {
+    switch (stmt) {
         .Var => |vr| {
             try res.appendSlice("local ");
-            try res.appendSlice(vr.name.lexem);
+            try res.appendSlice(vr.name);
             try res.appendSlice(" = ");
             if (vr.value) |value| {
                 try compile_lua_expr(value, res);
@@ -53,7 +53,7 @@ fn compile_lua_stmt(stmt: AST.Stmt, res: *String) Error!void {
         },
         .Const => |con| {
             try res.appendSlice("local ");
-            try res.appendSlice(con.name.lexem);
+            try res.appendSlice(con.name);
             try res.appendSlice(" = ");
             if (con.value) |value| {
                 try compile_lua_expr(value, res);
@@ -70,40 +70,22 @@ fn compile_lua_stmt(stmt: AST.Stmt, res: *String) Error!void {
     try res.append('\n');
 }
 
-fn compile_lua_expr(expr: AST.Expr, res: *String) Error!void {
-    switch (expr.node.*) {
-        .Binray => |bin| {
-            try compile_lua_expr(bin.lhs, res);
-            try compile_lua_op(bin.op, res);
-            try compile_lua_expr(bin.rhs, res);
-        },
-        .Unary => |unary| {
-            try compile_lua_op(unary.op, res);
-            try compile_lua_expr(unary.rhs, res);
-        },
-        .String => |str| {
-            try res.appendSlice(str.lexem);
+fn compile_lua_expr(expr: TSAST.Expr, res: *String) Error!void {
+    switch (expr) {
+        .Binary => |bin| {
+            try compile_lua_expr(bin.left.*, res);
+            try res.appendSlice(bin.op);
             try res.append(' ');
+            try compile_lua_expr(bin.right.*, res);
         },
-        .Number => |num| {
-            try res.appendSlice(num.lexem);
+        .Unary => |un| {
+            try res.appendSlice(un.op);
             try res.append(' ');
+            try compile_lua_expr(un.right.*, res);
         },
-        .Identifier => |id| {
-            try res.appendSlice(id.lexem);
+        .Constant => |con| {
+            try res.appendSlice(con.v);
             try res.append(' ');
-        },
-        .Boolean => |b| {
-            try res.appendSlice(b.lexem);
-            try res.append(' ');
-        },
-        .Grouping => |group| {
-            try res.append('(');
-            try compile_lua_expr(group, res);
-            try res.appendSlice(") ");
-        },
-        .Nil => {
-            try res.appendSlice("nil ");
         },
     }
 }
