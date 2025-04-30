@@ -260,7 +260,7 @@ fn analyze_constant_expr(
     switch (node.kind) {
         .StringLit => |v| return ExprResult{
             .expr = .{
-                .Constant = .{
+                .String = .{
                     .v = v,
                     .tp = .{ .kind = .{ .Primitive = .String } },
                 },

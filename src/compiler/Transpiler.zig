@@ -83,6 +83,11 @@ fn compile_lua_expr(expr: TSAST.Expr, res: *String) Error!void {
             try res.append(' ');
             try compile_lua_expr(un.right.*, res);
         },
+        .String => |str| {
+            try res.append('"');
+            try res.appendSlice(str.v);
+            try res.appendSlice("\" ");
+        },
         .Constant => |con| {
             try res.appendSlice(con.v);
             try res.append(' ');

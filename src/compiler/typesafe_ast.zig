@@ -74,6 +74,10 @@ pub const Expr = union(enum) {
         right: *const Expr,
         tp: Type,
     },
+    String: struct {
+        v: []const u8,
+        tp: Type,
+    },
     Constant: struct {
         v: []const u8,
         tp: Type,
@@ -89,6 +93,7 @@ pub const Expr = union(enum) {
         return switch (self) {
             .Binary => |bin| bin.tp,
             .Unary => |un| un.tp,
+            .String => |str| str.tp,
             .Constant => |con| con.tp,
         };
     }
@@ -107,6 +112,7 @@ pub const Expr = union(enum) {
 
                 allocator.destroy(un.right);
             },
+            .String => {},
             .Constant => {},
         }
     }
