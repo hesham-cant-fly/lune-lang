@@ -12,6 +12,10 @@ pub const TokenKindTag = enum {
 
     Nil, // 'nil'
 
+    Number, // 'number'
+    String, // 'string'
+    Auto, // 'auto'
+
     Identifier,
     StringLit,
     NumberLit,
@@ -38,6 +42,10 @@ pub const TokenKind = union(TokenKindTag) {
     Const, // 'const'
 
     Nil, // 'nil'
+
+    Number, // 'number'
+    String, // 'string'
+    Auto, // 'auto'
 
     Identifier: []const u8,
     StringLit: []const u8,
@@ -84,8 +92,7 @@ pub const TokenKind = union(TokenKindTag) {
             .Colon => sprint("Colon", .{}),
             .SemiColon => sprint("SemiColon", .{}),
 
-            .OpenParen,
-            => sprint("OpenParen", .{}),
+            .OpenParen => sprint("OpenParen", .{}),
             .CloseParen => sprint("CloseParen", .{}),
         }
     }

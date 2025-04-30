@@ -78,6 +78,9 @@ pub fn init_from(table: *Symbol.SymbolTable, tp_node: ?AST.Type) Error!Type {
                     ) },
                 };
             },
+            .Number => return .{ .kind = .{ .Primitive = .Number } },
+            .String => return .{ .kind = .{ .Primitive = .String } },
+            .Auto => return .{ .kind = .Auto },
         }
     } else {
         return Type{ .kind = .Auto };

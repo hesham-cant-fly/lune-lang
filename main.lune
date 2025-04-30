@@ -1,7 +1,7 @@
 -- Comment
 var x = 30; -- type inference
-var y: number = 20; -- type error
-var z: number = x + y; -- type error
+var y: number = 20;
+var z: string = x + y;
 var a: number = z ^ x;
 const B: number = a - 1;
 

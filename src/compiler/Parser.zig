@@ -149,6 +149,18 @@ fn parse_type(self: *Parser) Error!AST.Type {
             .Identifier = self.advance(),
         }),
         .QuestionMark => try self.parse_optional_type(),
+        .Number => res: {
+            _ = self.advance();
+            break :res try AST.TypeNode.create(self.allocator, .Number);
+        },
+        .String => res: {
+            _ = self.advance();
+            break :res try AST.TypeNode.create(self.allocator, .String);
+        },
+        .Auto => res: {
+            _ = self.advance();
+            break :res try AST.TypeNode.create(self.allocator, .Auto);
+        },
         else => return Error.InvalidToken,
     };
     const end = self.previous();

@@ -105,6 +105,8 @@ fn analyze_var(
                     .column = node.name.column,
                 },
             );
+            self.symbol_table.declare(node.name, tp);
+            try self.symbol_table.assign(node.name.get_id_panic(), null);
             return Error.TypeMismatch;
         }
         // Type inference if possible.
@@ -113,7 +115,6 @@ fn analyze_var(
     }
 
     self.symbol_table.declare(node.name, tp);
-
     return TSAST.Stmt{
         .Var = .{
             .name = node.name.kind.Identifier,

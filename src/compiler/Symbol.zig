@@ -40,23 +40,14 @@ pub const SymbolTable = struct {
     }
 
     fn create_builtins(allocator: mem.Allocator) mem.Allocator.Error!Builtin {
-        var res = Builtin{};
+        _ = allocator;
+        const res = Builtin{};
 
-        try res.put(
-            allocator,
-            "number",
-            Symbol.init_type("number", Type.init(.{ .Primitive = .Number })),
-        );
-        try res.put(
-            allocator,
-            "string",
-            Symbol.init_type("string", Type.init(.{ .Primitive = .String })),
-        );
-        try res.put(
-            allocator,
-            "auto",
-            Symbol.init_type("auto", Type.init(.Auto)),
-        );
+        // try res.put(
+        //     allocator,
+        //     "auto",
+        //     Symbol.init_type("auto", Type.init(.Auto)),
+        // );
 
         return res;
     }

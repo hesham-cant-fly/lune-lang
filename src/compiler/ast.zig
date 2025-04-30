@@ -79,6 +79,9 @@ pub const Stmt = struct {
 pub const TypeNode = union(enum) {
     Optional: Type,
     Identifier: Token,
+    Number,
+    String,
+    Auto,
 
     pub fn create(allocator: Allocator, value: TypeNode) Allocator.Error!*TypeNode {
         const result = try allocator.create(TypeNode);
@@ -102,10 +105,10 @@ pub const Type = struct {
 
     pub fn deinit(self: Type, allocator: Allocator) void {
         switch (self.node.*) {
-            TypeNode.Optional => |opt| {
+            .Optional => |opt| {
                 opt.deinit(allocator);
             },
-            TypeNode.Identifier => {},
+            .Identifier, .Number, .String, .Auto => {},
         }
 
         allocator.destroy(self.node);

@@ -14,6 +14,9 @@ pub const KEYWORDS = std.StaticStringMap(TokenKind).initComptime(.{
     .{ "var", .Var },
     .{ "const", .Const },
     .{ "nil", .Nil },
+    .{ "number", .Number },
+    .{ "string", .String },
+    .{ "auto", .Auto },
     .{ "true", TokenKind{ .BooleanLit = true } },
     .{ "false", TokenKind{ .BooleanLit = false } },
 });
