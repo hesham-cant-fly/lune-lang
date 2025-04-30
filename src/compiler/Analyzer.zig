@@ -87,6 +87,7 @@ fn analyze_var(
     node: AST.StmtNode.VarNode,
 ) Error!TSAST.Stmt {
     var tp = try Type.init_from(&self.symbol_table, node.tp);
+    defer self.symbol_table.declare(node.name, tp);
 
     try self.symbol_table.define(node.name);
 
@@ -94,6 +95,7 @@ fn analyze_var(
     errdefer if (expr) |e| e.deinit(self.allocator);
     if (node.value) |value| {
         expr = (try self.analyze_expr(value)).expr;
+        try self.symbol_table.assign(node.name.get_id_panic(), null);
         if (!tp.can_assign(expr.?.get_type())) {
             self.report_error(
                 "Type mismatch.",
@@ -105,16 +107,12 @@ fn analyze_var(
                     .column = node.name.column,
                 },
             );
-            self.symbol_table.declare(node.name, tp);
-            try self.symbol_table.assign(node.name.get_id_panic(), null);
             return Error.TypeMismatch;
         }
         // Type inference if possible.
         if (tp.is_auto()) tp = expr.?.get_type();
-        try self.symbol_table.assign(node.name.get_id_panic(), null);
     }
 
-    self.symbol_table.declare(node.name, tp);
     return TSAST.Stmt{
         .Var = .{
             .name = node.name.kind.Identifier,
@@ -129,12 +127,14 @@ fn analyze_const(
     node: AST.StmtNode.ConstNode,
 ) Error!TSAST.Stmt {
     var tp = try Type.init_from(&self.symbol_table, node.tp);
+    defer self.symbol_table.declare(node.name, tp);
 
     try self.symbol_table.define_constant(node.name);
 
     var expr: ?TSAST.Expr = null;
     if (node.value) |value| {
         expr = (try self.analyze_expr(value)).expr;
+        try self.symbol_table.assign(node.name.get_id_panic(), null);
         if (!tp.can_assign(expr.?.get_type())) {
             self.report_error(
                 "Type mismatch.",
@@ -149,10 +149,7 @@ fn analyze_const(
             return Error.TypeMismatch;
         }
         if (tp.is_auto()) tp = expr.?.get_type();
-        try self.symbol_table.assign(node.name.get_id_panic(), null);
     }
-
-    self.symbol_table.declare(node.name, tp);
 
     return TSAST.Stmt{
         .Const = .{
@@ -198,7 +195,7 @@ fn analyze_binary(
                     .msg = "Excepected to be a number.",
                     .len = (node.lhs.end.column + node.lhs.end.len) - node.lhs.start.column,
                     .at = node.lhs.start.index,
-                    .column = node.rhs.start.column,
+                    .column = node.lhs.start.column,
                 },
             );
             return err;
@@ -319,9 +316,7 @@ fn analyze_id(
                 .tp = tp.value_type,
             },
         },
-        .tp = .{
-            .kind = .{ .Reference = tp },
-        },
+        .tp = tp.value_type,
     };
 }
 
