@@ -1,5 +1,5 @@
 .{
-    .name = .lune_lang,
+    .name = "lune_lang",
     .version = "0.0.1",
 
     .fingerprint = 0x915053df4648d551, // Changing this has security and trust implications.
@@ -7,13 +7,13 @@
     .minimum_zig_version = "0.14.0",
 
     .dependencies = .{
-        .clap = .{
-            .url = "git+https://github.com/Hejsil/zig-clap#a4e784da8399c51d5eeb5783e6a485b960d5c1f9",
-            .hash = "clap-0.10.0-oBajB8fkAQB0JvsrWLar4YZrseSZ9irFxHB7Hvy_bvxb",
-        },
         .pretty = .{
             .url = "git+https://github.com/timfayz/pretty.git#784cdd5a5a221fa44faf195256a694d245fb21b7",
-            .hash = "pretty-0.10.4-AAAAAM9GAQATvLkzFJ6-Y9r_NWCAC2Q4hOKxHSnJXQLD",
+            .hash = "122013bcb933149ebe63daff3560800b643884e2b11d29c95d02c38ff316b0f579c5",
+        },
+        .clap = .{
+            .url = "git+https://github.com/hesham-cant-fly/zig-clap#e25b8ab357b8ea543ac9f7bb513d67561fbc74f0",
+            .hash = "1220235f636cf30a4d5789c2db70b6c44c7642a5efcd5ef2db3f9654f5f9bfa0a029",
         },
     },
     .paths = .{
