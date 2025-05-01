@@ -90,9 +90,43 @@ fn analyze_var(
     defer if (node.global) self.symbol_table.declare_global(node.name, tp) else self.symbol_table.declare(node.name, tp);
 
     if (node.global) {
-        try self.symbol_table.define_global(node.name);
+        self.symbol_table.define_global(node.name) catch |err| switch (err) {
+            SymbolTable.Error.RedefinitionOfVariable => {
+                // TODO: Specifie where it is defined
+                self.report_error(
+                    "Redefinition of a variable.",
+                    .{},
+                    node.name,
+                    .{
+                        .msg = "This already exists.",
+                        .line = node.name.line,
+                        .column = node.name.column,
+                    },
+                );
+                return err;
+            },
+            SymbolTable.Error.OutOfMemory => return err,
+            else => unreachable,
+        };
     } else {
-        try self.symbol_table.define(node.name);
+        self.symbol_table.define(node.name) catch |err| switch (err) {
+            SymbolTable.Error.RedefinitionOfVariable => {
+                // TODO: Specifie where it is defined
+                self.report_error(
+                    "Redefinition of a variable.",
+                    .{},
+                    node.name,
+                    .{
+                        .msg = "This already exists.",
+                        .line = node.name.line,
+                        .column = node.name.column,
+                    },
+                );
+                return err;
+            },
+            SymbolTable.Error.OutOfMemory => return err,
+            else => unreachable,
+        };
     }
 
     var expr: ?TSAST.Expr = null;
