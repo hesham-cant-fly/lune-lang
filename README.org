@@ -11,3 +11,19 @@ global x = 10;
 #+end_src
 
 and I'm planing to make the semicolon optional.
+
+* I wrote this while the lights are off
+Idk if i should hoist global variables or not.
+#+begin_src lune
+global const Z = 10;
+var x = 10; -- local
+global y = 69;
+#+end_src
+
+to
+
+#+begin_src lua
+_G.Z = 10
+_.y = 69
+local x = 10
+#+end_src
