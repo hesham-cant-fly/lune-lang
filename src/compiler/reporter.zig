@@ -51,7 +51,7 @@ pub fn report_pro(
     const line_chars_width = number_chars_len(usize, line);
     std.debug.print("\n {} | {s}\n", .{ line, lines });
 
-    std.debug.print("{s:>[1]} {2s}", .{
+    std.debug.print("{s:>[1]} {2s}\n", .{
         caret.caret,
         caret.column + 4 + line_chars_width,
         caret.msg,
