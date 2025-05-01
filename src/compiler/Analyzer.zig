@@ -77,7 +77,7 @@ fn analyze_stmt(self: *Analyzer, stmt: AST.Stmt) Error!TSAST.Stmt {
         .Var => |node| try self.analyze_var(node),
         .Const => |node| try self.analyze_const(node),
         .Expr => |expr| .{
-            .Expr = (try self.analyze_expr(expr)).expr,
+            .Expr = try self.analyze_expr(expr),
         },
     };
 }
@@ -87,11 +87,7 @@ fn analyze_var(
     node: AST.StmtNode.VarNode,
 ) Error!TSAST.Stmt {
     var tp = try Type.init_from(&self.symbol_table, node.tp);
-    defer if (node.global) {
-        self.symbol_table.declare_global(node.name, tp);
-    } else {
-        self.symbol_table.declare(node.name, tp);
-    };
+    defer if (node.global) self.symbol_table.declare_global(node.name, tp) else self.symbol_table.declare(node.name, tp);
 
     if (node.global) {
         try self.symbol_table.define_global(node.name);
@@ -102,7 +98,7 @@ fn analyze_var(
     var expr: ?TSAST.Expr = null;
     errdefer if (expr) |e| e.deinit(self.allocator);
     if (node.value) |value| {
-        expr = (try self.analyze_expr(value)).expr;
+        expr = try self.analyze_expr(value);
         if (node.global) {
             try self.symbol_table.assign_global(node.name.get_id_panic(), null);
         } else {
@@ -154,7 +150,7 @@ fn analyze_const(
 
     var expr: ?TSAST.Expr = null;
     if (node.value) |value| {
-        expr = (try self.analyze_expr(value)).expr;
+        expr = try self.analyze_expr(value);
         if (node.global) {
             try self.symbol_table.assign_global(node.name.get_id_panic(), null);
         } else {
@@ -187,15 +183,10 @@ fn analyze_const(
     };
 }
 
-const ExprResult = struct {
-    expr: TSAST.Expr,
-    tp: Type,
-};
-
 fn analyze_expr(
     self: *Analyzer,
     expr: AST.Expr,
-) Error!ExprResult {
+) Error!TSAST.Expr {
     return switch (expr.node.*) {
         .Binray => |bin| try self.analyze_binary(bin),
         .Unary => |un| try self.analyze_unary(un),
@@ -208,11 +199,11 @@ fn analyze_expr(
 fn analyze_binary(
     self: *Analyzer,
     node: AST.ExprNode.BinaryNode,
-) Error!ExprResult {
+) Error!TSAST.Expr {
     const left = try self.analyze_expr(node.lhs);
     const right = try self.analyze_expr(node.rhs);
 
-    const tp = left.tp.binary_op(node.op, right.tp) catch |err| switch (err) {
+    const tp = left.get_type().binary_op(node.op, right.get_type()) catch |err| switch (err) {
         Type.Error.ArithmaticOnNonNumberLeft => {
             self.report_error(
                 "Arithmatic on non number.",
@@ -244,87 +235,61 @@ fn analyze_binary(
         else => unreachable,
     };
 
-    return ExprResult{
-        .expr = TSAST.Expr{
-            .Binary = .{
-                .right = try TSAST.Expr.create(self.allocator, right.expr),
-                .left = try TSAST.Expr.create(self.allocator, left.expr),
-                .op = node.op.lexem,
-                .tp = tp,
-            },
+    return .{
+        .Binary = .{
+            .right = try TSAST.Expr.create(self.allocator, right),
+            .left = try TSAST.Expr.create(self.allocator, left),
+            .op = node.op.lexem,
+            .tp = tp,
         },
-        .tp = tp,
     };
 }
 
 fn analyze_unary(
     self: *Analyzer,
     node: AST.ExprNode.UnaryNode,
-) Error!ExprResult {
+) Error!TSAST.Expr {
     const right = try self.analyze_expr(node.rhs);
 
-    const tp = try right.tp.unary_op(node.op);
+    const tp = try right.get_type().unary_op(node.op);
 
-    return ExprResult{
-        .expr = TSAST.Expr{
-            .Unary = .{
-                .op = node.op.lexem,
-                .right = try TSAST.Expr.create(self.allocator, right.expr),
-                .tp = tp,
-            },
+    return TSAST.Expr{
+        .Unary = .{
+            .op = node.op.lexem,
+            .right = try TSAST.Expr.create(self.allocator, right),
+            .tp = tp,
         },
-        .tp = tp,
     };
 }
 
 fn analyze_constant_expr(
     self: *Analyzer,
     node: Token,
-) Error!ExprResult {
+) Error!TSAST.Expr {
     _ = self;
     switch (node.kind) {
-        .StringLit => |v| return ExprResult{
-            .expr = .{
-                .String = .{
-                    .v = v,
-                    .tp = .{ .kind = .{ .Primitive = .String } },
-                },
-            },
-            .tp = .{
-                .kind = .{ .Primitive = .String },
+        .StringLit => |v| return .{
+            .String = .{
+                .v = v,
+                .tp = .{ .kind = .{ .Primitive = .String } },
             },
         },
-        .NumberLit => return ExprResult{
-            .expr = .{
-                .Constant = .{
-                    .v = node.lexem,
-                    .tp = .{ .kind = .{ .Primitive = .Number } },
-                },
-            },
-            .tp = .{
-                .kind = .{ .Primitive = .Number },
+        .NumberLit => return .{
+            .Constant = .{
+                .v = node.lexem,
+                .tp = .{ .kind = .{ .Primitive = .Number } },
             },
         },
-        .BooleanLit => return ExprResult{
-            .expr = .{
-                .Constant = .{
-                    .v = node.lexem,
-                    .tp = .{ .kind = .{ .Primitive = .Boolean } },
-                },
-            },
-            .tp = .{
-                .kind = .{ .Primitive = .Boolean },
+        .BooleanLit => return .{
+            .Constant = .{
+                .v = node.lexem,
+                .tp = .{ .kind = .{ .Primitive = .Boolean } },
             },
         },
-        .Nil => return ExprResult{
-            .expr = .{
-                .Constant = .{
-                    .v = node.lexem,
-                    .tp = .{ .kind = .{ .Primitive = .Nil } },
-                },
-            },
-            .tp = .{
-                .kind = .{ .Primitive = .Nil },
+        .Nil => return .{
+            .Constant = .{
+                .v = node.lexem,
+                .tp = .{ .kind = .{ .Primitive = .Nil } },
             },
         },
         else => @panic("Unimplemented"),
@@ -334,16 +299,13 @@ fn analyze_constant_expr(
 fn analyze_id(
     self: *Analyzer,
     node: Token,
-) Error!ExprResult {
+) Error!TSAST.Expr {
     const tp = self.symbol_table.get_local_first(node.get_id_panic()) orelse return Error.UndefinedVariable;
-    return ExprResult{
-        .expr = .{
-            .Constant = .{
-                .v = node.lexem,
-                .tp = tp.value_type,
-            },
+    return .{
+        .Constant = .{
+            .v = node.lexem,
+            .tp = tp.value_type,
         },
-        .tp = tp.value_type,
     };
 }
 
