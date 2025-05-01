@@ -75,9 +75,7 @@ pub fn scan(self: *Lexer) Error!TokenList {
                 self.previous(),
             }, .{
                 .msg = "Unexpected Char",
-                .at = self.start,
                 .column = self.column,
-                .line = self.line,
             });
             self.has_error = true;
         };

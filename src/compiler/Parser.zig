@@ -363,7 +363,6 @@ fn parse_primary(self: *Parser) Error!AST.Expr {
     const tok = self.peek();
     self.report_error("Invalid Token: '{s}'.", .{tok.lexem}, tok, .{
         .msg = "Expected an expression.",
-        .len = tok.len,
         .column = tok.column,
     });
     return Error.InvalidToken;
@@ -376,7 +375,6 @@ fn consume(self: *Parser, kind: TokenKindTag, msg: []const u8) Error!Token {
     self.report_error("{s}", .{msg}, self.peek(), Report.Caret{
         .msg = msg,
         .column = self.peek().column,
-        .len = self.peek().lexem.len,
     });
     return error.InvalidToken;
 }
@@ -388,7 +386,6 @@ fn consume_semicolon(self: *Parser, msg: []const u8) Error!Token {
     self.report_error("{s}", .{msg}, self.previous(), Report.Caret{
         .msg = msg,
         .column = self.previous().column,
-        .len = self.previous().lexem.len,
     });
     return error.InvalidToken;
 }

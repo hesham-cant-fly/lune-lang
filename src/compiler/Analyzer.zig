@@ -99,7 +99,6 @@ fn analyze_var(
                     node.name,
                     .{
                         .msg = "This already exists.",
-                        .line = node.name.line,
                         .column = node.name.column,
                     },
                 );
@@ -118,7 +117,6 @@ fn analyze_var(
                     node.name,
                     .{
                         .msg = "This already exists.",
-                        .line = node.name.line,
                         .column = node.name.column,
                     },
                 );
@@ -147,7 +145,6 @@ fn analyze_var(
                 node.name,
                 .{
                     .msg = "Unmatched type.",
-                    .line = node.name.line,
                     .column = node.name.column,
                 },
             );
@@ -199,7 +196,6 @@ fn analyze_const(
                 node.name,
                 .{
                     .msg = "Unmatched type.",
-                    .line = node.name.line,
                     .column = node.name.column,
                 },
             );
@@ -245,7 +241,6 @@ fn analyze_binary(
                 node.lhs.start,
                 .{
                     .msg = "Excepected to be a number.",
-                    .line = node.name.line,
                     .column = node.lhs.start.column,
                 },
             );
@@ -258,7 +253,6 @@ fn analyze_binary(
                 node.rhs.start,
                 .{
                     .msg = "Excepected to be a number.",
-                    .line = node.name.line,
                     .column = node.rhs.start.column,
                 },
             );

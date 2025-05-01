@@ -20,10 +20,7 @@ pub const ReportKind = enum(u8) {
 pub const Caret = struct {
     msg: []const u8,
     caret: []const u8 = "^",
-    len: usize = 1,
-    at: usize = 0,
     column: usize = 0,
-    line: usize = 0,
 };
 
 pub fn report_pro(
@@ -51,7 +48,7 @@ pub fn report_pro(
 
     std.debug.print(fmt, args);
 
-    const line_chars_width = number_chars_len(usize, caret.line);
+    const line_chars_width = number_chars_len(usize, line);
     std.debug.print("\n {} | {s}\n", .{ line, lines });
 
     std.debug.print("{s:>[1]} {2s}", .{
