@@ -79,7 +79,10 @@ fn parse_stmt(self: *Parser) Error!AST.Stmt {
         .Const => try self.parse_const_stmt(),
         .Global => try self.parse_global(),
         .Local => try self.parse_local(),
-        else => try self.parse_expr_stmt(),
+        else => res: {
+            self.index -= 1;
+            break :res try self.parse_expr_stmt();
+        },
     };
 
     const end = self.previous();
@@ -91,7 +94,8 @@ fn parse_expr_stmt(self: *Parser) Error!*const AST.StmtNode {
     const expr = try self.parse_expr();
     errdefer expr.deinit(self.allocator);
 
-    _ = try self.consume(.SemiColon, "Expected a semicolon ';' at the end of an expression statement.");
+    // _ = try self.consume(.SemiColon, "Expected a semicolon ';' at the end of an expression statement.");
+    _ = self.match_one(.SemiColon);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Expr = expr,
@@ -110,7 +114,8 @@ fn parse_var_stmt(self: *Parser) Error!*AST.StmtNode {
     else
         null;
     errdefer if (value) |v| v.deinit(self.allocator);
-    _ = try self.consume_semicolon("Expected a semicolon ';' at the end of a variable declaration.");
+    // _ = try self.consume_semicolon("Expected a semicolon ';' at the end of a variable declaration.");
+    _ = self.match_one(.SemiColon);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Var = .{
@@ -133,7 +138,8 @@ fn parse_const_stmt(self: *Parser) Error!*AST.StmtNode {
     else
         null;
     errdefer if (value) |v| v.deinit(self.allocator);
-    _ = try self.consume_semicolon("Expected a semicolon ';' at the end of a constant declaration.");
+    // _ = try self.consume_semicolon("Expected a semicolon ';' at the end of a constant declaration.");
+    _ = self.match_one(.SemiColon);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Const = .{
