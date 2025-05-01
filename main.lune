@@ -1,5 +1,5 @@
 -- Comment
-global var x: auto = 30; -- type inference
+global var x: any = 30; -- type inference
 global const y: number = 20;
 local var z: number = x + y;
 local a: number = z ^ x;

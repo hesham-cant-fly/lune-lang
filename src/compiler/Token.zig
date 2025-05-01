@@ -16,6 +16,7 @@ pub const TokenKindTag = enum {
 
     Number, // 'number'
     String, // 'string'
+    Any, // 'any'
     Auto, // 'auto'
 
     Identifier,
@@ -49,6 +50,7 @@ pub const TokenKind = union(TokenKindTag) {
 
     Number, // 'number'
     String, // 'string'
+    Any, // 'any'
     Auto, // 'auto'
 
     Identifier: []const u8,

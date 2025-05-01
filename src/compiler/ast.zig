@@ -84,6 +84,7 @@ pub const TypeNode = union(enum) {
     Number,
     String,
     Auto,
+    Any,
 
     pub fn create(allocator: Allocator, value: TypeNode) Allocator.Error!*TypeNode {
         const result = try allocator.create(TypeNode);
@@ -110,7 +111,7 @@ pub const Type = struct {
             .Optional => |opt| {
                 opt.deinit(allocator);
             },
-            .Identifier, .Number, .String, .Auto => {},
+            .Identifier, .Number, .String, .Auto, .Any => {},
         }
 
         allocator.destroy(self.node);

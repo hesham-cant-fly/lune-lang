@@ -197,6 +197,10 @@ fn parse_type(self: *Parser) Error!AST.Type {
             _ = self.advance();
             break :res try AST.TypeNode.create(self.allocator, .Auto);
         },
+        .Any => res: {
+            _ = self.advance();
+            break :res try AST.TypeNode.create(self.allocator, .Any);
+        },
         else => return Error.InvalidToken,
     };
     const end = self.previous();

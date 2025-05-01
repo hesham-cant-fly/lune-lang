@@ -81,6 +81,7 @@ pub fn init_from(table: *Symbol.SymbolTable, tp_node: ?AST.Type) Error!Type {
             .Number => return .{ .kind = .{ .Primitive = .Number } },
             .String => return .{ .kind = .{ .Primitive = .String } },
             .Auto => return .{ .kind = .Auto },
+            .Any => return .{ .kind = .Any },
         }
     } else {
         return Type{ .kind = .Auto };
@@ -104,11 +105,21 @@ pub fn is_number(self: Type) bool {
 pub fn is_auto(self: Type) bool {
     return switch (self.kind) {
         .Auto => true,
+        .Reference => @panic("I don't think that you're really wants to check if a symbol is auto or something."),
+        else => false,
+    };
+}
+
+pub fn is_any(self: Type) bool {
+    return switch (self.kind) {
+        .Any => true,
+        .Reference => |ref| ref.value_type.is_any(),
         else => false,
     };
 }
 
 pub fn matches(self: Type, other: Type) bool {
+    if (other.is_any()) return true;
     switch (self.kind) {
         .Primitive => |v| {
             if (other.kind != .Primitive) return false;
@@ -133,14 +144,16 @@ pub inline fn can_assign(self: Type, other: Type) bool {
 pub fn binary_op(
     self: Type,
     op: Token,
-    rhs: Type,
+    other: Type,
 ) Error!Type {
+    if (self.is_any() or other.is_any())
+        return .{ .kind = .Any };
     switch (op.kind) {
         .Plus, .Minus, .Star, .FSlash, .Hat => {
             if (!self.is_number()) {
                 return Error.ArithmaticOnNonNumberLeft;
             }
-            if (!rhs.is_number()) {
+            if (!other.is_number()) {
                 return Error.ArithmaticOnNonNumberRight;
             }
             return Type{
@@ -156,6 +169,7 @@ pub fn unary_op(
     self: Type,
     op: Token,
 ) Error!Type {
+    if (self.is_any()) return .{ .kind = .Any };
     switch (op.kind) {
         .Plus, .Minus => {
             if (!self.is_number()) {
