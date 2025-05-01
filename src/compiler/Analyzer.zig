@@ -87,16 +87,30 @@ fn analyze_var(
     node: AST.StmtNode.VarNode,
 ) Error!TSAST.Stmt {
     var tp = try Type.init_from(&self.symbol_table, node.tp);
-    defer self.symbol_table.declare(node.name, tp);
+    defer if (node.global) {
+        self.symbol_table.declare_global(node.name, tp);
+    } else {
+        self.symbol_table.declare(node.name, tp);
+    };
 
-    try self.symbol_table.define(node.name);
+    if (node.global) {
+        try self.symbol_table.define_global(node.name);
+    } else {
+        try self.symbol_table.define(node.name);
+    }
 
     var expr: ?TSAST.Expr = null;
     errdefer if (expr) |e| e.deinit(self.allocator);
     if (node.value) |value| {
         expr = (try self.analyze_expr(value)).expr;
-        try self.symbol_table.assign(node.name.get_id_panic(), null);
-        if (!tp.can_assign(expr.?.get_type())) {
+        if (node.global) {
+            try self.symbol_table.assign_global(node.name.get_id_panic(), null);
+        } else {
+            try self.symbol_table.assign(node.name.get_id_panic(), null);
+        }
+        if (tp.is_auto()) { // Type inference if possible.
+            tp = expr.?.get_type();
+        } else if (!tp.can_assign(expr.?.get_type())) {
             self.report_error(
                 "Type mismatch.",
                 .{},
@@ -109,8 +123,6 @@ fn analyze_var(
             );
             return Error.TypeMismatch;
         }
-        // Type inference if possible.
-        if (tp.is_auto()) tp = expr.?.get_type();
     }
 
     return TSAST.Stmt{
@@ -118,6 +130,7 @@ fn analyze_var(
             .name = node.name.kind.Identifier,
             .value = expr,
             .tp = tp,
+            .global = node.global,
         },
     };
 }
@@ -127,15 +140,29 @@ fn analyze_const(
     node: AST.StmtNode.ConstNode,
 ) Error!TSAST.Stmt {
     var tp = try Type.init_from(&self.symbol_table, node.tp);
-    defer self.symbol_table.declare(node.name, tp);
+    defer if (node.global) {
+        self.symbol_table.declare_global(node.name, tp);
+    } else {
+        self.symbol_table.declare(node.name, tp);
+    };
 
-    try self.symbol_table.define_constant(node.name);
+    if (node.global) {
+        try self.symbol_table.define_global_constant(node.name);
+    } else {
+        try self.symbol_table.define_constant(node.name);
+    }
 
     var expr: ?TSAST.Expr = null;
     if (node.value) |value| {
         expr = (try self.analyze_expr(value)).expr;
-        try self.symbol_table.assign(node.name.get_id_panic(), null);
-        if (!tp.can_assign(expr.?.get_type())) {
+        if (node.global) {
+            try self.symbol_table.assign_global(node.name.get_id_panic(), null);
+        } else {
+            try self.symbol_table.assign(node.name.get_id_panic(), null);
+        }
+        if (tp.is_auto()) { // Infer the type if possible
+            tp = expr.?.get_type();
+        } else if (!tp.can_assign(expr.?.get_type())) {
             self.report_error(
                 "Type mismatch.",
                 .{},
@@ -148,7 +175,6 @@ fn analyze_const(
             );
             return Error.TypeMismatch;
         }
-        if (tp.is_auto()) tp = expr.?.get_type();
     }
 
     return TSAST.Stmt{
@@ -156,6 +182,7 @@ fn analyze_const(
             .name = node.name.kind.Identifier,
             .value = expr,
             .tp = tp,
+            .global = node.global,
         },
     };
 }

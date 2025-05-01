@@ -22,11 +22,13 @@ pub const StmtNode = union(enum) {
         name: Token,
         tp: ?Type,
         value: ?Expr,
+        global: bool = false,
     };
     pub const ConstNode = struct {
         name: Token,
         tp: ?Type,
         value: ?Expr,
+        global: bool = false,
     };
     Var: VarNode,
     Const: ConstNode,

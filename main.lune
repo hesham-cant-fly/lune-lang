@@ -1,9 +1,9 @@
 -- Comment
-var x = 30; -- type inference
-var y: number = 20;
-var z: string = x + y;
-var a: number = z ^ x;
-const B: number = a - 1;
+global var x: auto = 30; -- type inference
+global const y: number = 20;
+local var z: number = x + y;
+local a: number = z ^ x;
+global B: number = a - 1;
 
 const Z: number = B - 10;
 const zz = "Hello World";

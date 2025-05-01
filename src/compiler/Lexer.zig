@@ -13,6 +13,8 @@ const Lexer = @This();
 pub const KEYWORDS = std.StaticStringMap(TokenKind).initComptime(.{
     .{ "var", .Var },
     .{ "const", .Const },
+    .{ "global", .Global },
+    .{ "local", .Local },
     .{ "nil", .Nil },
     .{ "number", .Number },
     .{ "string", .String },

@@ -9,6 +9,8 @@ pub const TokenList = std.ArrayList(Token);
 pub const TokenKindTag = enum {
     Var, // 'var'
     Const, // 'const'
+    Global, // 'global'
+    Local, // 'local'
 
     Nil, // 'nil'
 
@@ -40,6 +42,8 @@ pub const TokenKindTag = enum {
 pub const TokenKind = union(TokenKindTag) {
     Var, // 'var'
     Const, // 'const'
+    Global, // 'global'
+    Local, // 'local'
 
     Nil, // 'nil'
 

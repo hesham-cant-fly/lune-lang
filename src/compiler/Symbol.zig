@@ -96,6 +96,20 @@ pub const SymbolTable = struct {
         try scope.put(self.allocator, name.lexem, symbol);
     }
 
+    pub fn define_global(self: *SymbolTable, name: Token) Error!void {
+        const scope = self.get_global_scope();
+        if (scope.get(name.lexem) != null) return Error.RedefinitionOfVariable;
+        try scope.put(self.allocator, name.lexem, Symbol.init_unknown(name));
+    }
+
+    pub fn define_global_constant(self: *SymbolTable, name: Token) Error!void {
+        const scope = self.get_global_scope();
+        if (scope.get(name.lexem) != null) return Error.RedefinitionOfVariable;
+        var symbol = Symbol.init_unknown(name);
+        symbol.constant = true;
+        try scope.put(self.allocator, name.lexem, symbol);
+    }
+
     pub fn declare(self: *SymbolTable, name: Token, tp: Type) void {
         const scope = self.get_current_scope();
         if (scope.getPtr(name.lexem)) |vr| {
@@ -106,7 +120,33 @@ pub const SymbolTable = struct {
         @panic("Declaring undefined variable");
     }
 
+    pub fn declare_global(self: *SymbolTable, name: Token, tp: Type) void {
+        const scope = self.get_global_scope();
+        if (scope.getPtr(name.lexem)) |vr| {
+            vr.decalred = true;
+            vr.value_type = tp;
+            return;
+        }
+        @panic("Declaring undefined variable");
+    }
+
+    pub fn assign_global(self: *SymbolTable, name: []const u8, comptime_value: ?ComptimeValue) Error!void {
+        const scope = self.get_global_scope();
+        if (scope.getPtr(name)) |vr| {
+            if (vr.is_type) return Error.AssignmentToType;
+            if (vr.constant and vr.assigned)
+                return Error.ReassignmentToConstant;
+
+            vr.comptime_value = comptime_value;
+            vr.assigned = true;
+            return;
+        }
+        return Error.UndefinedVariable;
+    }
+
+    // FIXME: Potential scoping error
     pub fn assign(self: *SymbolTable, name: []const u8, comptime_value: ?ComptimeValue) Error!void {
+        // NOTE: Excatly in here
         const scope = self.get_current_scope();
         if (scope.getPtr(name)) |vr| {
             if (vr.is_type) return Error.AssignmentToType;
@@ -159,7 +199,7 @@ pub const SymbolTable = struct {
 
     pub fn get_global_scope(self: *SymbolTable) *Scope {
         const head = self.scopes.first orelse @panic("Expected a global scope to be present.");
-        return head.data;
+        return &head.data;
     }
 
     pub fn get_current_scope(self: *SymbolTable) *Scope {

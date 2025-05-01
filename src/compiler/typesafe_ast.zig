@@ -24,11 +24,13 @@ pub const Stmt = union(enum) {
         name: []const u8,
         value: ?Expr,
         tp: Type,
+        global: bool = false,
     },
     Const: struct {
         name: []const u8,
         value: ?Expr,
         tp: Type,
+        global: bool = false,
     },
 
     pub fn create(allocator: Allocator, value: Stmt) Allocator.Error!Stmt {

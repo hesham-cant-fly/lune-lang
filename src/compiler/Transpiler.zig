@@ -41,7 +41,11 @@ fn compile_lua(self: *const Transpiler) Error!String {
 fn compile_lua_stmt(stmt: TSAST.Stmt, res: *String) Error!void {
     switch (stmt) {
         .Var => |vr| {
-            try res.appendSlice("local ");
+            if (vr.global) {
+                try res.appendSlice("_G.");
+            } else {
+                try res.appendSlice("local ");
+            }
             try res.appendSlice(vr.name);
             try res.appendSlice(" = ");
             if (vr.value) |value| {
@@ -52,7 +56,11 @@ fn compile_lua_stmt(stmt: TSAST.Stmt, res: *String) Error!void {
             }
         },
         .Const => |con| {
-            try res.appendSlice("local ");
+            if (con.global) {
+                try res.appendSlice("_G.");
+            } else {
+                try res.appendSlice("local ");
+            }
             try res.appendSlice(con.name);
             try res.appendSlice(" = ");
             if (con.value) |value| {

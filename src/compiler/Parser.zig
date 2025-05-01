@@ -77,6 +77,8 @@ fn parse_stmt(self: *Parser) Error!AST.Stmt {
     const node = switch (self.advance().kind) {
         .Var => try self.parse_var_stmt(),
         .Const => try self.parse_const_stmt(),
+        .Global => try self.parse_global(),
+        .Local => try self.parse_local(),
         else => try self.parse_expr_stmt(),
     };
 
@@ -96,7 +98,7 @@ fn parse_expr_stmt(self: *Parser) Error!*const AST.StmtNode {
     });
 }
 
-fn parse_var_stmt(self: *Parser) Error!*const AST.StmtNode {
+fn parse_var_stmt(self: *Parser) Error!*AST.StmtNode {
     const name = try self.consume(.Identifier, "Expected a name.");
     const tp = if (self.match_one(.Colon) != null)
         try self.parse_type()
@@ -119,7 +121,7 @@ fn parse_var_stmt(self: *Parser) Error!*const AST.StmtNode {
     });
 }
 
-fn parse_const_stmt(self: *Parser) Error!*const AST.StmtNode {
+fn parse_const_stmt(self: *Parser) Error!*AST.StmtNode {
     const name = try self.consume(.Identifier, "Expected a name.");
     const tp = if (self.match_one(.Colon) != null)
         try self.parse_type()
@@ -140,6 +142,40 @@ fn parse_const_stmt(self: *Parser) Error!*const AST.StmtNode {
             .value = value,
         },
     });
+}
+
+fn parse_global(self: *Parser) Error!*const AST.StmtNode {
+    var node: *const AST.StmtNode = undefined;
+    switch (self.advance().kind) {
+        .Var => {
+            const nd = try self.parse_var_stmt();
+            nd.Var.global = true;
+            node = nd;
+        },
+        .Const => {
+            const nd = try self.parse_const_stmt();
+            nd.Const.global = true;
+            node = nd;
+        },
+        else => {
+            self.index -= 1;
+            const nd = try self.parse_var_stmt();
+            nd.Var.global = true;
+            node = nd;
+        },
+    }
+    return node;
+}
+
+fn parse_local(self: *Parser) Error!*const AST.StmtNode {
+    return switch (self.advance().kind) {
+        .Var => try self.parse_var_stmt(),
+        .Const => try self.parse_const_stmt(),
+        else => {
+            self.index -= 1;
+            return self.parse_var_stmt();
+        },
+    };
 }
 
 fn parse_type(self: *Parser) Error!AST.Type {
