@@ -3,3 +3,4 @@ tmp/
 zig-out/
 
 *.log
+out.lua
