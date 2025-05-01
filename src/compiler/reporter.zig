@@ -54,17 +54,11 @@ pub fn report_pro(
     const line_chars_width = number_chars_len(usize, caret.line);
     std.debug.print("\n {} | {s}\n", .{ line, lines });
 
-    // const caret = "^";
-
-    var caret_buffer: [40]u8 = undefined;
-    @memset(&caret_buffer, '^');
-
-    std.debug.print("{s:>[1]}{2s} ", .{
+    std.debug.print("{s:>[1]} {2s}", .{
         caret.caret,
         caret.column + 4 + line_chars_width,
-        caret_buffer[0..caret.len -| 1],
+        caret.msg,
     });
-    std.debug.print("{s}\n", .{caret.msg});
 }
 
 fn get_line(content: []const u8, index: usize) []const u8 {
@@ -88,7 +82,7 @@ fn get_line(content: []const u8, index: usize) []const u8 {
 }
 
 fn number_chars_len(T: type, num: T) usize {
-    var count: usize = 1;
+    var count: usize = 0;
     var n = num;
 
     while (n != 0) : (n /= 10) {

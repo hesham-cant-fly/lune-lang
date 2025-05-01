@@ -147,7 +147,7 @@ fn analyze_var(
                 node.name,
                 .{
                     .msg = "Unmatched type.",
-                    .len = node.name.len,
+                    .line = node.name.line,
                     .column = node.name.column,
                 },
             );
@@ -199,7 +199,7 @@ fn analyze_const(
                 node.name,
                 .{
                     .msg = "Unmatched type.",
-                    .len = node.name.len,
+                    .line = node.name.line,
                     .column = node.name.column,
                 },
             );
@@ -245,8 +245,7 @@ fn analyze_binary(
                 node.lhs.start,
                 .{
                     .msg = "Excepected to be a number.",
-                    .len = (node.lhs.end.column + node.lhs.end.len) - node.lhs.start.column,
-                    .at = node.lhs.start.index,
+                    .line = node.name.line,
                     .column = node.lhs.start.column,
                 },
             );
@@ -259,8 +258,7 @@ fn analyze_binary(
                 node.rhs.start,
                 .{
                     .msg = "Excepected to be a number.",
-                    .len = (node.rhs.end.column + node.rhs.end.len) - node.rhs.start.column,
-                    .at = node.rhs.start.index,
+                    .line = node.name.line,
                     .column = node.rhs.start.column,
                 },
             );
