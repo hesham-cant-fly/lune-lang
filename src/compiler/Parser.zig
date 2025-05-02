@@ -45,6 +45,9 @@ pub fn parse(self: *Parser) Error!AST.Program {
     }
 
     while (!self.is_at_end()) {
+        if (self.match_one(.SemiColon)) |_| { // Ignoring semicolons
+            continue;
+        }
         const stmt = self.parse_stmt() catch |err| {
             if (err == Error.OutOfMemory)
                 return err;
@@ -95,7 +98,7 @@ fn parse_expr_stmt(self: *Parser) Error!*const AST.StmtNode {
     errdefer expr.deinit(self.allocator);
 
     // _ = try self.consume(.SemiColon, "Expected a semicolon ';' at the end of an expression statement.");
-    _ = self.match_one(.SemiColon);
+    // _ = self.match_one(.SemiColon);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Expr = expr,
@@ -115,7 +118,7 @@ fn parse_var_stmt(self: *Parser) Error!*AST.StmtNode {
         null;
     errdefer if (value) |v| v.deinit(self.allocator);
     // _ = try self.consume_semicolon("Expected a semicolon ';' at the end of a variable declaration.");
-    _ = self.match_one(.SemiColon);
+    // _ = self.match_one(.SemiColon);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Var = .{
@@ -139,7 +142,7 @@ fn parse_const_stmt(self: *Parser) Error!*AST.StmtNode {
         null;
     errdefer if (value) |v| v.deinit(self.allocator);
     // _ = try self.consume_semicolon("Expected a semicolon ';' at the end of a constant declaration.");
-    _ = self.match_one(.SemiColon);
+    // _ = self.match_one(.SemiColon);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Const = .{
