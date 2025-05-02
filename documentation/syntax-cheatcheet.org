@@ -1,0 +1,70 @@
+#+title: Syntax Cheatcheet
+
+* Hello World
+#+begin_src lune
+print("Hello World") -- as simpl as lua :D
+#+end_src
+
+*  Comments
+#+begin_src lune
+-- Single line comment :D
+
+--[[
+Multi
+line
+comment
+:D
+]]
+#+end_src
+
+*  Values and data types
+#+begin_src lune
+-- You can use `local` instead of `var`
+var number_thing: number = 10
+var another_number_thing = 19 -- type inference
+
+var adult: bool = true or false
+
+var name: string = "Hesham"
+
+-- Optional
+var am_i_sigma: ?bool = null
+am_i_sigma = false
+
+-- Errors (maybe)
+#+end_src
+
+* Variables
+** Local variables
+both =var= and =local= works exactly the same!
+#+begin_src lune
+-- local name: type = value -- this value is kind of optional
+local a: number = 20
+local b = 20 -- `b` gets inferred into number based on the value
+
+local c: string
+c = "hey!"
+
+-- var name: type = value -- the value in here is optional too!
+local var d: bool = false
+var e = 20
+#+end_src
+** Local Constants
+Constants in lune are single assignment.
+#+begin_src lune
+-- const name: type = value
+const name = "Hesham" -- type inference
+local const age: number = 19
+#+end_src
+
+** Globals
+#+begin_src lune
+-- global <variable or constant definition>
+
+-- Those are both the same
+global var x: number = 10
+global y = 20
+
+-- use `const` to define a global constant
+global const z: number = 1
+#+end_src
