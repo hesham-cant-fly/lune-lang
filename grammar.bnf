@@ -1,0 +1,50 @@
+
+block            = "do" , statement* , "end" .
+statement        = locals
+                 | globals
+                 | assignment
+                 | scoped_statement
+                 .
+
+locals           = "local" , scoped_statement .
+globals          = "global" , scoped_statement .
+
+scoped_statement = "var" , typed_id_list , [ "=" , expr_list ]
+                 | "const" , typed_id_list , [ "=" , expr_list ]
+                 .
+
+
+type             = "" .
+
+; Expressions
+expr       = literal
+           | "(" , expr , ")"
+           | expr , binary_op , expr
+           | unary_op , expr
+           .
+
+assignment = var_list , "=" , expr_list .
+
+binary_op  = "*" | "/" | "-" | "+" | "^" .
+unary_op   = "+" | "-" .
+
+; Literals
+literal    = nil | boolean | string | number .
+nil        = "nil" .
+boolean    = "true" | "false" .
+string     = ( "\"" , <any> , "\"" )
+           | ( "'" , <any> , "'" )
+           .
+number     = real | int .
+
+typed_id         = name , ":" , type .
+expr_list        = expr , { "," , expr } .
+typed_id_list    = typed_id , { "," , typed_id } .
+var_list         = variad , { ",", variad }
+variad           = name
+name_list        = name , { "," , name } .
+
+real      = int , "," , [ int ]
+int       = digit | { digit }
+digit     = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+name      = <name> .
