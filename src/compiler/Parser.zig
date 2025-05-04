@@ -231,16 +231,16 @@ fn parse_optional_type(self: *Parser) Error!*const AST.TypeNode {
 }
 
 fn parse_expr(self: *Parser) Error!AST.Expr {
-    return self.parse_term();
+    return self.parse_cast();
 }
 
 fn parse_assign(self: *Parser) Error!AST.Expr {
     const start = self.peek();
-    var vr = try self.parse_term();
+    var vr = try self.parse_expr();
     errdefer vr.deinit(self.allocator);
 
     if (self.match_one(.Eq)) |_| {
-        const value = try self.parse_term();
+        const value = try self.parse_expr();
         errdefer value.deinit(self.allocator);
         const end = self.previous();
 
@@ -257,6 +257,24 @@ fn parse_assign(self: *Parser) Error!AST.Expr {
     }
 
     return vr;
+}
+
+fn parse_cast(self: *Parser) Error!AST.Expr {
+    var value = try self.parse_term();
+    errdefer value.deinit(self.allocator);
+
+    while (self.match_one(.As)) |_| {
+        const tp = try self.parse_type();
+        const node = try AST.ExprNode.create(self.allocator, .{
+            .Cast = .{
+                .value = value,
+                .tp = tp,
+            },
+        });
+        value = AST.Expr.init(value.start, tp.end, node);
+    }
+
+    return value;
 }
 
 fn parse_term(self: *Parser) Error!AST.Expr {

@@ -66,32 +66,31 @@ pub const Stmt = union(enum) {
 
 pub const Expr = union(enum) {
     pub const AssignNode = struct {
+        tp: Type,
         vr: *const Expr,
         value: *const Expr,
-        tp: Type,
     };
     pub const BinaryNode = struct {
+        tp: Type,
         left: *const Expr,
         right: *const Expr,
         op: []const u8,
-        tp: Type,
     };
     pub const UnaryNode = struct {
+        tp: Type,
         op: []const u8,
         right: *const Expr,
-        tp: Type,
     };
     pub const StringNode = struct {
-        v: []const u8,
         tp: Type,
+        v: []const u8,
     };
     pub const ConstantNode = struct {
-        v: []const u8,
         tp: Type,
+        v: []const u8,
     };
     Binary: BinaryNode,
     Unary: UnaryNode,
-    // AssignGroup: []Assign,
     Assign: AssignNode,
     String: StringNode,
     Constant: ConstantNode,
@@ -110,6 +109,16 @@ pub const Expr = union(enum) {
             .String => |str| str.tp,
             .Constant => |con| con.tp,
         };
+    }
+
+    pub fn set_type(self: *Expr, tp: Type) void {
+        switch (self.*) {
+            .Binary => |*bin| bin.tp = tp,
+            .Unary => |*un| un.tp = tp,
+            .Assign => |*a| a.tp = tp,
+            .String => |*str| str.tp = tp,
+            .Constant => |*con| con.tp = tp,
+        }
     }
 
     pub fn is_assignment(self: Expr) bool {

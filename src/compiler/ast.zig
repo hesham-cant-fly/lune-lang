@@ -134,10 +134,15 @@ pub const ExprNode = union(enum) {
         vr: Expr,
         value: Expr,
     };
+    pub const CastNode = struct {
+        value: Expr,
+        tp: Type,
+    };
     Grouping: Expr,
     Binray: BinaryNode,
     Unary: UnaryNode,
     Assign: AssignNode,
+    Cast: CastNode,
     String: Token,
     Number: Token,
     Identifier: Token,
@@ -179,6 +184,10 @@ pub const Expr = struct {
             .Assign => |as| {
                 as.vr.deinit(allocator);
                 as.value.deinit(allocator);
+            },
+            .Cast => |cast| {
+                cast.tp.deinit(allocator);
+                cast.value.deinit(allocator);
             },
             .String, .Number, .Identifier, .Boolean, .Nil => {},
         }

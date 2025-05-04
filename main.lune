@@ -3,8 +3,8 @@ var b: auto = 1 ^ a
 b = 1
 b = a ^ 2
 
-const c = 20
-c = b
+var c: number = "huh" as number
+c = a
 
 -- Comment
 -- global var x: any = 30; -- type inference

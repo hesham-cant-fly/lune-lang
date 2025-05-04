@@ -16,6 +16,7 @@ pub const KEYWORDS = std.StaticStringMap(TokenKind).initComptime(.{
     .{ "global", .Global },
     .{ "local", .Local },
     .{ "nil", .Nil },
+    .{ "as", .As },
     .{ "number", .Number },
     .{ "string", .String },
     .{ "any", .Any },

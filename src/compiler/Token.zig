@@ -14,6 +14,8 @@ pub const TokenKindTag = enum {
 
     Nil, // 'nil'
 
+    As, // 'as'
+
     Number, // 'number'
     String, // 'string'
     Any, // 'any'
@@ -48,6 +50,8 @@ pub const TokenKind = union(TokenKindTag) {
     Local, // 'local'
 
     Nil, // 'nil'
+
+    As, // 'as'
 
     Number, // 'number'
     String, // 'string'

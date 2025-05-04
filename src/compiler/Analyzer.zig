@@ -222,6 +222,7 @@ fn analyze_expr(
         .Unary => |un| try self.analyze_unary(un),
         .Grouping => |groupe| try self.analyze_expr(groupe),
         .Assign => |ass| try self.analyze_assignment(ass),
+        .Cast => |cast| try self.analyze_cast(cast),
         .String, .Number, .Boolean, .Nil => |tok| try self.analyze_constant_expr(tok),
         .Identifier => |tok| try self.analyze_id(tok),
     };
@@ -327,7 +328,20 @@ fn analyze_assignment(
     };
 }
 
-pub const Assignable = struct {
+fn analyze_cast(
+    self: *Analyzer,
+    node: AST.ExprNode.CastNode,
+) Error!TSAST.Expr {
+    var value = try self.analyze_expr(node.value);
+    errdefer value.deinit(self.allocator);
+
+    const tp = try Type.init_from(&self.symbol_table, node.tp);
+    value.set_type(tp);
+
+    return value;
+}
+
+const Assignable = struct {
     symbol: *Symbol,
     expr: TSAST.Expr,
 };
