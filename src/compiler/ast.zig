@@ -85,6 +85,7 @@ pub const TypeNode = union(enum) {
     Identifier: Token,
     Number,
     String,
+    Bool,
     Auto,
     Any,
 
@@ -113,7 +114,7 @@ pub const Type = struct {
             .Optional => |opt| {
                 opt.deinit(allocator);
             },
-            .Identifier, .Number, .String, .Auto, .Any => {},
+            .Identifier, .Number, .String, .Bool, .Auto, .Any => {},
         }
 
         allocator.destroy(self.node);

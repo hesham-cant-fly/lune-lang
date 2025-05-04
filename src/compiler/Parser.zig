@@ -204,6 +204,10 @@ fn parse_type(self: *Parser) Error!AST.Type {
             _ = self.advance();
             break :res try AST.TypeNode.create(self.allocator, .String);
         },
+        .Bool => res: {
+            _ = self.advance();
+            break :res try AST.TypeNode.create(self.allocator, .Bool);
+        },
         .Auto => res: {
             _ = self.advance();
             break :res try AST.TypeNode.create(self.allocator, .Auto);

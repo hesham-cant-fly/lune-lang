@@ -37,7 +37,7 @@ pub const TypeKind = union(enum) {
     pub const PrimitiveKind = enum(u8) {
         Number,
         String,
-        Boolean,
+        Bool,
         Nil,
 
         pub fn format(
@@ -53,7 +53,7 @@ pub const TypeKind = union(enum) {
                 switch (self) {
                     .Number => "number",
                     .String => "string",
-                    .Boolean => "bool",
+                    .Bool => "bool",
                     .Nil => "nil",
                 },
             });
@@ -114,6 +114,7 @@ pub fn init_from(table: *Symbol.SymbolTable, tp_node: ?AST.Type) Error!Type {
             },
             .Number => return .{ .kind = .{ .Primitive = .Number } },
             .String => return .{ .kind = .{ .Primitive = .String } },
+            .Bool => return .{ .kind = .{ .Primitive = .Bool } },
             .Auto => return .{ .kind = .Auto },
             .Any => return .{ .kind = .Any },
         }

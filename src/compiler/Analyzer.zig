@@ -446,7 +446,7 @@ fn analyze_constant_expr(
         .BooleanLit => return .{
             .Constant = .{
                 .v = node.lexem,
-                .tp = .{ .kind = .{ .Primitive = .Boolean } },
+                .tp = .{ .kind = .{ .Primitive = .Bool } },
             },
         },
         .Nil => return .{
