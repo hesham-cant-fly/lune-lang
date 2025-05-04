@@ -1,7 +1,10 @@
 var a: number = 10
-var b = 1 ^ a
-b = "rohehehe"
+var b: auto = 1 ^ a
+b = 1
 b = a ^ 2
+
+const c = 20
+c = b
 
 -- Comment
 -- global var x: any = 30; -- type inference

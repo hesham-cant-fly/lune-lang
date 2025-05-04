@@ -245,3 +245,12 @@ pub fn init_type(name: []const u8, tp: Type) Symbol {
         .constant = true,
     };
 }
+
+pub fn assign(self: *Symbol, comptime_value: ?ComptimeValue) SymbolTable.Error!void {
+    if (self.is_type) return error.AssignmentToType;
+    if (self.constant and self.assigned)
+        return error.ReassignmentToConstant;
+
+    self.comptime_value = comptime_value;
+    self.assigned = true;
+}

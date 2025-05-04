@@ -297,28 +297,13 @@ fn analyze_assignment(
     self: *Analyzer,
     node: AST.ExprNode.AssignNode,
 ) Error!TSAST.Expr {
-    // TODO: Make this as `analyze_assignmenable`
-    const vr = switch (node.vr.node.*) {
-        .Identifier => try self.analyze_expr(node.vr),
-        else => {
-            self.report_error(
-                "You can only assign into a variable name.",
-                .{},
-                node.vr.start,
-                .{
-                    .msg = "Expected to be a variable name.",
-                    .column = node.vr.start.column,
-                },
-            );
-            return Error.AnalyzerError;
-        },
-    };
-    errdefer vr.deinit(self.allocator);
+    const vr = try self.analyze_assignable(node.vr);
+    errdefer vr.expr.deinit(self.allocator);
 
     const value = try self.analyze_expr(node.value);
     errdefer value.deinit(self.allocator);
 
-    const var_type = vr.get_type();
+    const var_type = vr.symbol.value_type;
     const value_type = value.get_type();
     if (!var_type.can_assign(value_type)) {
         self.report_error(
@@ -335,10 +320,82 @@ fn analyze_assignment(
 
     return TSAST.Expr{
         .Assign = .{
-            .vr = try TSAST.Expr.create(self.allocator, vr),
+            .vr = try TSAST.Expr.create(self.allocator, vr.expr),
             .value = try TSAST.Expr.create(self.allocator, value),
-            .tp = vr.get_type(),
+            .tp = vr.expr.get_type(),
         },
+    };
+}
+
+pub const Assignable = struct {
+    symbol: *Symbol,
+    expr: TSAST.Expr,
+};
+fn analyze_assignable(
+    self: *Analyzer,
+    node: AST.Expr,
+) Error!Assignable {
+    var symbol: *Symbol = undefined;
+    var expr: TSAST.Expr = undefined;
+    switch (node.node.*) {
+        AST.ExprNode.Identifier => |id| {
+            symbol = self.symbol_table.get_local_first(id.kind.Identifier) orelse return Error.UndefinedVariable;
+            expr = try self.analyze_expr(node);
+        },
+        else => {
+            self.report_error(
+                "You can only assign into a variable name.",
+                .{},
+                node.start,
+                .{
+                    .msg = "Expected to be a variable name.",
+                    .column = node.start.column,
+                },
+            );
+            return Error.AnalyzerError;
+        },
+    }
+
+    symbol.assign(null) catch |err| switch (err) {
+        error.AssignmentToType => {
+            self.report_error(
+                "Cannot assign into a type.",
+                .{},
+                node.start,
+                .{
+                    .msg = "here.",
+                    .column = node.start.column,
+                },
+            );
+            return err;
+        },
+        error.ReassignmentToConstant => {
+            self.report_error(
+                "Connot assign into a constant twice.",
+                .{},
+                node.start,
+                .{
+                    .msg = "Assignment accured here.",
+                    .column = node.start.column,
+                },
+            );
+            self.report_info(
+                "The constant `{s}` is defined here.",
+                .{symbol.name.lexem},
+                symbol.name,
+                .{
+                    .msg = "Just here.",
+                    .column = symbol.name.column,
+                },
+            );
+            return err;
+        },
+        else => unreachable,
+    };
+
+    return .{
+        .symbol = symbol,
+        .expr = expr,
     };
 }
 
@@ -404,6 +461,26 @@ fn report_error(
         tok.line,
         tok.column,
         .Error,
+        fmt,
+        args,
+    );
+}
+
+fn report_info(
+    self: *const Analyzer,
+    comptime fmt: []const u8,
+    args: anytype,
+    tok: Token,
+    caret: Report.Caret,
+) void {
+    Report.report_pro(
+        self.content,
+        self.path,
+        caret,
+        tok.index,
+        tok.line,
+        tok.column,
+        .Info,
         fmt,
         args,
     );
