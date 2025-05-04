@@ -191,8 +191,8 @@ fn analyze_const(
             tp = expr.?.get_type();
         } else if (!tp.can_assign(expr.?.get_type())) {
             self.report_error(
-                "Type mismatch.",
-                .{},
+                "can't assign a value of type `{s}` to `{s}`.",
+                .{ tp, expr.?.get_type() },
                 node.name,
                 .{
                     .msg = "Unmatched type.",
@@ -336,6 +336,18 @@ fn analyze_cast(
     errdefer value.deinit(self.allocator);
 
     const tp = try Type.init_from(&self.symbol_table, node.tp);
+    if (tp.is_auto()) {
+        self.report_error(
+            "Can't cast into `auto`.",
+            .{},
+            node.tp.start,
+            .{
+                .msg = "This is not a valid type for casting.",
+                .column = node.tp.start.column,
+            },
+        );
+        return Error.TypeMismatch;
+    }
     value.set_type(tp);
 
     return value;

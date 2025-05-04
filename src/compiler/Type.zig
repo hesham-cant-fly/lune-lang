@@ -82,6 +82,7 @@ pub const TypeKind = union(enum) {
         switch (self) {
             .Primitive => |pri| try pri.format(fmt, options, writer),
             .Any => try writer.print("any", .{}),
+            .Auto => try writer.print("auto", .{}),
             else => unreachable,
         }
     }

@@ -1,9 +1,9 @@
-var a: number = 10
-var b: auto = 1 ^ a
+local a: number = 10
+var b = 1 ^ a
 b = 1
 b = a ^ 2
 
-var c: number = "huh" as number
+const c: number = "huh" as auto
 c = a
 
 -- Comment
