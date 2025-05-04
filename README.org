@@ -7,9 +7,9 @@ x = 10
 
 you have to use ~global~ keyword instead.
 #+begin_src lune
-global x = 10;
+global x = 10
 #+end_src
 
-and I'm planing to make the semicolon optional.
+semicolons are now optional :D
 
 * Good new! no global variables hoisting :D
