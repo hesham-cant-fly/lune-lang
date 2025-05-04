@@ -39,6 +39,25 @@ pub const TypeKind = union(enum) {
         String,
         Boolean,
         Nil,
+
+        pub fn format(
+            self: PrimitiveKind,
+            comptime fmt: []const u8,
+            options: std.fmt.FormatOptions,
+            writer: anytype,
+        ) !void {
+            _ = fmt;
+            _ = options;
+
+            try writer.print("{s}", .{
+                switch (self) {
+                    .Number => "number",
+                    .String => "string",
+                    .Boolean => "bool",
+                    .Nil => "nil",
+                },
+            });
+        }
     };
     Primitive: PrimitiveKind,
     Function: Callable,
@@ -46,11 +65,25 @@ pub const TypeKind = union(enum) {
     Reference: *const Symbol,
     Auto,
     Any,
+    Unknown,
 
     pub fn create(allocator: Allocator, value: Type) Allocator.Error!*Type {
         const result = try allocator.create(Type);
         result.* = value;
         return result;
+    }
+
+    pub fn format(
+        self: TypeKind,
+        comptime fmt: []const u8,
+        options: std.fmt.FormatOptions,
+        writer: anytype,
+    ) !void {
+        switch (self) {
+            .Primitive => |pri| try pri.format(fmt, options, writer),
+            .Any => try writer.print("any", .{}),
+            else => unreachable,
+        }
     }
 };
 
@@ -88,6 +121,12 @@ pub fn init_from(table: *Symbol.SymbolTable, tp_node: ?AST.Type) Error!Type {
     }
 }
 
+pub fn init_unkown() Type {
+    return Type{
+        .kind = .Unknown,
+    };
+}
+
 pub fn create(allocator: Allocator, value: Type) Allocator.Error!*Type {
     const result = try allocator.create(Type);
     result.* = value;
@@ -118,6 +157,15 @@ pub fn is_any(self: Type) bool {
     };
 }
 
+pub fn format(
+    self: Type,
+    comptime fmt: []const u8,
+    options: std.fmt.FormatOptions,
+    writer: anytype,
+) !void {
+    return self.kind.format(fmt, options, writer);
+}
+
 pub fn matches(self: Type, other: Type) bool {
     if (other.is_any()) return true;
     switch (self.kind) {
@@ -134,6 +182,7 @@ pub fn matches(self: Type, other: Type) bool {
         },
         .Function => @panic("tood"),
         .Auto, .Any => return true,
+        .Unknown => @panic(""),
     }
 }
 
