@@ -65,25 +65,36 @@ pub const Stmt = union(enum) {
 };
 
 pub const Expr = union(enum) {
-    Binary: struct {
+    pub const AssignNode = struct {
+        vr: *const Expr,
+        value: *const Expr,
+        tp: Type,
+    };
+    pub const BinaryNode = struct {
         left: *const Expr,
+        right: *const Expr,
+        op: []const u8,
+        tp: Type,
+    };
+    pub const UnaryNode = struct {
         op: []const u8,
         right: *const Expr,
         tp: Type,
-    },
-    Unary: struct {
-        op: []const u8,
-        right: *const Expr,
-        tp: Type,
-    },
-    String: struct {
+    };
+    pub const StringNode = struct {
         v: []const u8,
         tp: Type,
-    },
-    Constant: struct {
+    };
+    pub const ConstantNode = struct {
         v: []const u8,
         tp: Type,
-    },
+    };
+    Binary: BinaryNode,
+    Unary: UnaryNode,
+    // AssignGroup: []Assign,
+    Assign: AssignNode,
+    String: StringNode,
+    Constant: ConstantNode,
 
     pub fn create(allocator: Allocator, value: Expr) Allocator.Error!*Expr {
         const result = try allocator.create(Expr);
@@ -95,9 +106,14 @@ pub const Expr = union(enum) {
         return switch (self) {
             .Binary => |bin| bin.tp,
             .Unary => |un| un.tp,
+            .Assign => |a| a.tp,
             .String => |str| str.tp,
             .Constant => |con| con.tp,
         };
+    }
+
+    pub fn is_assignment(self: Expr) bool {
+        return self == .Assign;
     }
 
     pub fn deinit(self: Expr, allocator: Allocator) void {
@@ -113,6 +129,13 @@ pub const Expr = union(enum) {
                 un.right.deinit(allocator);
 
                 allocator.destroy(un.right);
+            },
+            .Assign => |a| {
+                a.vr.deinit(allocator);
+                a.value.deinit(allocator);
+
+                allocator.destroy(a.vr);
+                allocator.destroy(a.value);
             },
             .String => {},
             .Constant => {},

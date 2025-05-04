@@ -35,6 +35,7 @@ pub const TokenKindTag = enum {
     QuestionMark, // '?'
     Colon, // ':'
     SemiColon, // ';'
+    Comma, // ','
 
     OpenParen, // '('
     CloseParen, // ')'
@@ -69,6 +70,7 @@ pub const TokenKind = union(TokenKindTag) {
     QuestionMark, // '?'
     Colon, // ':'
     SemiColon, // ';'
+    Comma, // ','
 
     OpenParen, // '('
     CloseParen, // ')'

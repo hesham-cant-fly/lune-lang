@@ -114,6 +114,7 @@ fn scan_lexem(self: *Lexer) Error!void {
         '?' => try self.add_token(.QuestionMark),
         ':' => try self.add_token(.Colon),
         ';' => try self.add_token(.SemiColon),
+        ',' => try self.add_token(.Comma),
 
         '(' => try self.add_token(.OpenParen),
         ')' => try self.add_token(.CloseParen),

@@ -221,6 +221,7 @@ fn analyze_expr(
         .Binray => |bin| try self.analyze_binary(bin),
         .Unary => |un| try self.analyze_unary(un),
         .Grouping => |groupe| try self.analyze_expr(groupe),
+        .Assign => |ass| try self.analyze_assignment(ass),
         .String, .Number, .Boolean, .Nil => |tok| try self.analyze_constant_expr(tok),
         .Identifier => |tok| try self.analyze_id(tok),
     };
@@ -279,11 +280,64 @@ fn analyze_unary(
 
     const tp = try right.get_type().unary_op(node.op);
 
+    if (node.op.kind == .Plus) {
+        return right;
+    } else {
+        return TSAST.Expr{
+            .Unary = .{
+                .op = node.op.lexem,
+                .right = try TSAST.Expr.create(self.allocator, right),
+                .tp = tp,
+            },
+        };
+    }
+}
+
+fn analyze_assignment(
+    self: *Analyzer,
+    node: AST.ExprNode.AssignNode,
+) Error!TSAST.Expr {
+    // TODO: Make this as `analyze_assignmenable`
+    const vr = switch (node.vr.node.*) {
+        .Identifier => try self.analyze_expr(node.vr),
+        else => {
+            self.report_error(
+                "You can only assign into a variable name.",
+                .{},
+                node.vr.start,
+                .{
+                    .msg = "Expected to be a variable name.",
+                    .column = node.vr.start.column,
+                },
+            );
+            return Error.AnalyzerError;
+        },
+    };
+    errdefer vr.deinit(self.allocator);
+
+    const value = try self.analyze_expr(node.value);
+    errdefer value.deinit(self.allocator);
+
+    const var_type = vr.get_type();
+    const value_type = value.get_type();
+    if (!var_type.can_assign(value_type)) {
+        self.report_error(
+            "Cannot assign value of type `{s}` to a number `{s}`.",
+            .{ value_type, var_type },
+            node.vr.start,
+            .{
+                .msg = "Mismatch type.",
+                .column = node.value.start.column,
+            },
+        );
+        return Error.TypeMismatch;
+    }
+
     return TSAST.Expr{
-        .Unary = .{
-            .op = node.op.lexem,
-            .right = try TSAST.Expr.create(self.allocator, right),
-            .tp = tp,
+        .Assign = .{
+            .vr = try TSAST.Expr.create(self.allocator, vr),
+            .value = try TSAST.Expr.create(self.allocator, value),
+            .tp = vr.get_type(),
         },
     };
 }

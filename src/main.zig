@@ -38,12 +38,19 @@ pub fn main() !void {
     lxr.deinit();
     defer ast.deinit(allocator);
 
+    // try pretty.print(allocator, ast, .{
+    //     .max_depth = 0,
+    //     .tab_size = 4,
+    //     .filter_field_names = .{
+    //         .exclude = &.{ "start", "end" },
+    //     },
+    // });
+
     var analyzer = try Analyzer.init(allocator, ast, content, "main.lune");
     defer analyzer.deinit();
 
     const tsast = try analyzer.analyze();
     defer tsast.deinit(allocator);
-    // try pretty.print(allocator, tsast, .{});
     const tr = Transpiler.init(allocator, tsast);
     const res = try tr.compile(.Lua);
     defer res.deinit();

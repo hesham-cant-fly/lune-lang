@@ -19,12 +19,14 @@ pub const Program = struct {
 
 pub const StmtNode = union(enum) {
     pub const VarNode = struct {
+        // TODO: Names list
         name: Token,
         tp: ?Type,
         value: ?Expr,
         global: bool = false,
     };
     pub const ConstNode = struct {
+        // TODO: Names list
         name: Token,
         tp: ?Type,
         value: ?Expr,
@@ -128,9 +130,14 @@ pub const ExprNode = union(enum) {
         rhs: Expr,
         op: Token,
     };
+    pub const AssignNode = struct {
+        vr: Expr,
+        value: Expr,
+    };
     Grouping: Expr,
     Binray: BinaryNode,
     Unary: UnaryNode,
+    Assign: AssignNode,
     String: Token,
     Number: Token,
     Identifier: Token,
@@ -159,6 +166,9 @@ pub const Expr = struct {
 
     pub fn deinit(self: Expr, allocator: Allocator) void {
         switch (self.node.*) {
+            ExprNode.Grouping => |expr| {
+                expr.deinit(allocator);
+            },
             ExprNode.Binray => |bin| {
                 bin.lhs.deinit(allocator);
                 bin.rhs.deinit(allocator);
@@ -166,10 +176,11 @@ pub const Expr = struct {
             ExprNode.Unary => |unary| {
                 unary.rhs.deinit(allocator);
             },
-            .String, .Number, .Identifier, .Boolean, .Nil => {},
-            ExprNode.Grouping => |expr| {
-                expr.deinit(allocator);
+            .Assign => |as| {
+                as.vr.deinit(allocator);
+                as.value.deinit(allocator);
             },
+            .String, .Number, .Identifier, .Boolean, .Nil => {},
         }
         allocator.destroy(self.node);
     }

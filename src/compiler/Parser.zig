@@ -84,7 +84,7 @@ fn parse_stmt(self: *Parser) Error!AST.Stmt {
         .Local => try self.parse_local(),
         else => res: {
             self.index -= 1;
-            break :res try self.parse_expr_stmt();
+            break :res try self.parse_assign_stmt();
         },
     };
 
@@ -97,28 +97,32 @@ fn parse_expr_stmt(self: *Parser) Error!*const AST.StmtNode {
     const expr = try self.parse_expr();
     errdefer expr.deinit(self.allocator);
 
-    // _ = try self.consume(.SemiColon, "Expected a semicolon ';' at the end of an expression statement.");
-    // _ = self.match_one(.SemiColon);
-
     return try AST.StmtNode.create(self.allocator, .{
         .Expr = expr,
     });
 }
 
+fn parse_assign_stmt(self: *Parser) Error!*const AST.StmtNode {
+    const ass = try self.parse_assign();
+    errdefer ass.deinit(self.allocator);
+
+    return try AST.StmtNode.create(self.allocator, .{
+        .Expr = ass,
+    });
+}
+
 fn parse_var_stmt(self: *Parser) Error!*AST.StmtNode {
     const name = try self.consume(.Identifier, "Expected a name.");
-    const tp = if (self.match_one(.Colon) != null)
+    const tp = if (self.match_one(.Colon)) |_|
         try self.parse_type()
     else
         null;
     errdefer if (tp) |t| t.deinit(self.allocator);
-    const value = if (self.match_one(.Eq) != null)
+    const value = if (self.match_one(.Eq)) |_|
         try self.parse_expr()
     else
         null;
     errdefer if (value) |v| v.deinit(self.allocator);
-    // _ = try self.consume_semicolon("Expected a semicolon ';' at the end of a variable declaration.");
-    // _ = self.match_one(.SemiColon);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Var = .{
@@ -131,18 +135,16 @@ fn parse_var_stmt(self: *Parser) Error!*AST.StmtNode {
 
 fn parse_const_stmt(self: *Parser) Error!*AST.StmtNode {
     const name = try self.consume(.Identifier, "Expected a name.");
-    const tp = if (self.match_one(.Colon) != null)
+    const tp = if (self.match_one(.Colon)) |_|
         try self.parse_type()
     else
         null;
     errdefer if (tp) |t| t.deinit(self.allocator);
-    const value = if (self.match_one(.Eq) != null)
+    const value = if (self.match_one(.Eq)) |_|
         try self.parse_expr()
     else
         null;
     errdefer if (value) |v| v.deinit(self.allocator);
-    // _ = try self.consume_semicolon("Expected a semicolon ';' at the end of a constant declaration.");
-    // _ = self.match_one(.SemiColon);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Const = .{
@@ -232,6 +234,31 @@ fn parse_expr(self: *Parser) Error!AST.Expr {
     return self.parse_term();
 }
 
+fn parse_assign(self: *Parser) Error!AST.Expr {
+    const start = self.peek();
+    var vr = try self.parse_term();
+    errdefer vr.deinit(self.allocator);
+
+    if (self.match_one(.Eq)) |_| {
+        const value = try self.parse_term();
+        errdefer value.deinit(self.allocator);
+        const end = self.previous();
+
+        return AST.Expr{
+            .start = start,
+            .end = end,
+            .node = try AST.ExprNode.create(self.allocator, .{
+                .Assign = .{
+                    .value = value,
+                    .vr = vr,
+                },
+            }),
+        };
+    }
+
+    return vr;
+}
+
 fn parse_term(self: *Parser) Error!AST.Expr {
     var lhs = try self.parse_factor();
     errdefer lhs.deinit(self.allocator);
@@ -270,6 +297,7 @@ fn parse_factor(self: *Parser) Error!AST.Expr {
     return lhs;
 }
 
+// TODO: Make it right-associative
 fn parse_power(self: *Parser) Error!AST.Expr {
     var lhs = try self.parse_unary();
     errdefer lhs.deinit(self.allocator);
@@ -460,6 +488,7 @@ fn report_error(
     tok: Token,
     caret: Report.Caret,
 ) void {
+    std.debug.print("Parsing Error\n", .{});
     Report.report_pro(
         self.content,
         self.path,

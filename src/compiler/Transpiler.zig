@@ -49,7 +49,7 @@ fn compile_lua_stmt(stmt: TSAST.Stmt, res: *String) Error!void {
             try res.appendSlice(vr.name);
             try res.appendSlice(" = ");
             if (vr.value) |value| {
-                try compile_lua_expr(value, res);
+                try compile_lua_expr(value, res, false);
                 res.items.len -= 1;
             } else {
                 try res.appendSlice("nil");
@@ -64,39 +64,56 @@ fn compile_lua_stmt(stmt: TSAST.Stmt, res: *String) Error!void {
             try res.appendSlice(con.name);
             try res.appendSlice(" = ");
             if (con.value) |value| {
-                try compile_lua_expr(value, res);
+                try compile_lua_expr(value, res, false);
                 res.items.len -= 1;
             } else {
                 try res.appendSlice("nil");
             }
         },
         .Expr => |expr| {
-            try compile_lua_expr(expr, res);
+            try compile_lua_expr(expr, res, true);
             res.items.len -= 1;
         },
     }
     try res.append('\n');
 }
 
-fn compile_lua_expr(expr: TSAST.Expr, res: *String) Error!void {
+fn compile_lua_expr(expr: TSAST.Expr, res: *String, is_stmt: bool) Error!void {
     switch (expr) {
         .Binary => |bin| {
-            try compile_lua_expr(bin.left.*, res);
+            if (is_stmt) {
+                try res.appendSlice("_G._ = ");
+            }
+            try compile_lua_expr(bin.left.*, res, false);
             try res.appendSlice(bin.op);
             try res.append(' ');
-            try compile_lua_expr(bin.right.*, res);
+            try compile_lua_expr(bin.right.*, res, false);
         },
         .Unary => |un| {
+            if (is_stmt) {
+                try res.appendSlice("_G._ = ");
+            }
             try res.appendSlice(un.op);
             try res.append(' ');
-            try compile_lua_expr(un.right.*, res);
+            try compile_lua_expr(un.right.*, res, false);
+        },
+        .Assign => |ass| {
+            try compile_lua_expr(ass.vr.*, res, false);
+            try res.appendSlice("= ");
+            try compile_lua_expr(ass.value.*, res, false);
         },
         .String => |str| {
+            if (is_stmt) {
+                try res.appendSlice("_G._ = ");
+            }
             try res.append('"');
             try res.appendSlice(str.v);
             try res.appendSlice("\" ");
         },
         .Constant => |con| {
+            if (is_stmt) {
+                try res.appendSlice("_G._ = ");
+            }
             try res.appendSlice(con.v);
             try res.append(' ');
         },
