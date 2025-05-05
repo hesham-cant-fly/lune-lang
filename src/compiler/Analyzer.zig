@@ -1,5 +1,4 @@
-// Hoisting and type checking
-
+/// Hoisting and type checking
 const std = @import("std");
 const mem = std.mem;
 const Allocator = mem.Allocator;
@@ -133,7 +132,7 @@ fn analyze_var(
     }
 
     var expr: ?TSAST.Expr = null;
-    errdefer if (expr) |e| e.deinit(self.allocator);
+    // errdefer if (expr) |e| e.deinit(self.allocator);
     if (node.value) |value| {
         expr = try self.analyze_expr(value);
         if (node.global) {
@@ -225,6 +224,7 @@ fn analyze_doend(
     var block = TSAST.Block{};
 
     _ = try self.symbol_table.scope_start();
+    defer self.symbol_table.scope_end();
 
     var block_iter = AST.BlockIter.init(&stmt);
     while (block_iter.next()) |node| {
@@ -233,8 +233,6 @@ fn analyze_doend(
         nd.data = st;
         block.append(nd);
     }
-
-    _ = self.symbol_table.scope_end();
 
     return TSAST.Stmt{
         .DoEnd = block,
@@ -251,6 +249,7 @@ fn analyze_expr(
         .Grouping => |groupe| try self.analyze_expr(groupe),
         .Assign => |ass| try self.analyze_assignment(ass),
         .Cast => |cast| try self.analyze_cast(cast),
+        .Call => |call| try self.analyze_call(call),
         .String, .Number, .Boolean, .Nil => |tok| try self.analyze_constant_expr(tok),
         .Identifier => |tok| try self.analyze_id(tok),
     };
@@ -327,16 +326,16 @@ fn analyze_assignment(
     node: AST.ExprNode.AssignNode,
 ) Error!TSAST.Expr {
     const vr = try self.analyze_assignable(node.vr);
-    errdefer vr.expr.deinit(self.allocator);
+    // errdefer vr.expr.deinit(self.allocator);
 
     const value = try self.analyze_expr(node.value);
-    errdefer value.deinit(self.allocator);
+    // errdefer value.deinit(self.allocator);
 
     const var_type = vr.symbol.value_type;
     const value_type = value.get_type();
     if (!var_type.can_assign(value_type)) {
         self.report_error(
-            "Cannot assign value of type `{s}` to a number `{s}`.",
+            "Cannot assign value of type `{s}` to a value of type `{s}`.",
             .{ value_type, var_type },
             node.vr.start,
             .{
@@ -361,7 +360,7 @@ fn analyze_cast(
     node: AST.ExprNode.CastNode,
 ) Error!TSAST.Expr {
     var value = try self.analyze_expr(node.value);
-    errdefer value.deinit(self.allocator);
+    // errdefer value.deinit(self.allocator);
 
     const tp = try Type.init_from(&self.symbol_table, node.tp);
     if (tp.is_auto()) {
@@ -379,6 +378,30 @@ fn analyze_cast(
     value.set_type(tp);
 
     return value;
+}
+
+fn analyze_call(
+    self: *Analyzer,
+    node: AST.ExprNode.CallNode,
+) Error!TSAST.Expr {
+    const callee = try self.analyze_expr(node.callee);
+    var args = std.DoublyLinkedList(TSAST.Expr){};
+
+    // More type checking
+    var current = node.args.first;
+    while (current) |nude| { // Zig's fault
+        current = nude.next;
+        const expr = try self.analyze_expr(nude.data.expr);
+        const nd = try self.allocator.create(std.DoublyLinkedList(TSAST.Expr).Node);
+        nd.data = expr;
+        args.append(nd);
+    }
+
+    return .{
+        .Call = .{ .callee = try TSAST.Expr.create(self.allocator, callee), .args = args, .result_type = .{
+            .kind = .Any,
+        } },
+    };
 }
 
 const Assignable = struct {

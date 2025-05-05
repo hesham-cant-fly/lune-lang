@@ -19,8 +19,9 @@ pub const Callable = struct {
     args: []const Arg,
     return_type: *const Type,
 
-    pub const Arg = struct {
-        tp: *const Type,
+    pub const Arg = union(enum) {
+        Rest: Type,
+        Normal: Type,
     };
 };
 

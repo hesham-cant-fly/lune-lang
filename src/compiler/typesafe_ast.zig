@@ -111,9 +111,15 @@ pub const Expr = union(enum) {
         tp: Type,
         v: []const u8,
     };
+    pub const CallNode = struct {
+        callee: *const Expr,
+        args: std.DoublyLinkedList(Expr),
+        result_type: Type,
+    };
     Binary: BinaryNode,
     Unary: UnaryNode,
     Assign: AssignNode,
+    Call: CallNode,
     String: StringNode,
     Constant: ConstantNode,
 
@@ -128,6 +134,7 @@ pub const Expr = union(enum) {
             .Binary => |bin| bin.tp,
             .Unary => |un| un.tp,
             .Assign => |a| a.tp,
+            .Call => |c| c.result_type,
             .String => |str| str.tp,
             .Constant => |con| con.tp,
         };
@@ -138,6 +145,7 @@ pub const Expr = union(enum) {
             .Binary => |*bin| bin.tp = tp,
             .Unary => |*un| un.tp = tp,
             .Assign => |*a| a.tp = tp,
+            .Call => |*c| c.result_type = tp,
             .String => |*str| str.tp = tp,
             .Constant => |*con| con.tp = tp,
         }
@@ -147,31 +155,31 @@ pub const Expr = union(enum) {
         return self == .Assign;
     }
 
-    pub fn deinit(self: Expr, allocator: Allocator) void {
-        switch (self) {
-            .Binary => |bin| {
-                bin.left.deinit(allocator);
-                bin.right.deinit(allocator);
+    // pub fn deinit(self: Expr, allocator: Allocator) void {
+    //     switch (self) {
+    //         .Binary => |bin| {
+    //             bin.left.deinit(allocator);
+    //             bin.right.deinit(allocator);
 
-                allocator.destroy(bin.left);
-                allocator.destroy(bin.right);
-            },
-            .Unary => |un| {
-                un.right.deinit(allocator);
+    //             allocator.destroy(bin.left);
+    //             allocator.destroy(bin.right);
+    //         },
+    //         .Unary => |un| {
+    //             un.right.deinit(allocator);
 
-                allocator.destroy(un.right);
-            },
-            .Assign => |a| {
-                a.vr.deinit(allocator);
-                a.value.deinit(allocator);
+    //             allocator.destroy(un.right);
+    //         },
+    //         .Assign => |a| {
+    //             a.vr.deinit(allocator);
+    //             a.value.deinit(allocator);
 
-                allocator.destroy(a.vr);
-                allocator.destroy(a.value);
-            },
-            .String => {},
-            .Constant => {},
-        }
-    }
+    //             allocator.destroy(a.vr);
+    //             allocator.destroy(a.value);
+    //         },
+    //         .String => {},
+    //         .Constant => {},
+    //     }
+    // }
 };
 
 pub const Function = struct {

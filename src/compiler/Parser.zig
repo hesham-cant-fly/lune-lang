@@ -49,7 +49,7 @@ pub fn parse(self: *Parser) Error!AST.Program {
             self.has_error = true;
             continue;
         };
-        errdefer stmt.deinit(self.allocator);
+        // errdefer stmt.deinit(self.allocator);
 
         const node = try self.allocator.create(AST.Block.Node);
         node.data = stmt;
@@ -100,7 +100,7 @@ fn parse_expr_stmt(self: *Parser) Error!*const AST.StmtNode {
 
 fn parse_assign_stmt(self: *Parser) Error!*const AST.StmtNode {
     const ass = try self.parse_assign();
-    errdefer ass.deinit(self.allocator);
+    // errdefer ass.deinit(self.allocator);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Expr = ass,
@@ -118,7 +118,7 @@ fn parse_var_stmt(self: *Parser) Error!*AST.StmtNode {
         try self.parse_expr()
     else
         null;
-    errdefer if (value) |v| v.deinit(self.allocator);
+    // errdefer if (value) |v| v.deinit(self.allocator);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Var = .{
@@ -140,7 +140,7 @@ fn parse_const_stmt(self: *Parser) Error!*AST.StmtNode {
         try self.parse_expr()
     else
         null;
-    errdefer if (value) |v| v.deinit(self.allocator);
+    // errdefer if (value) |v| v.deinit(self.allocator);
 
     return try AST.StmtNode.create(self.allocator, .{
         .Const = .{
@@ -251,12 +251,12 @@ fn parse_expr(self: *Parser) Error!AST.Expr {
 
 fn parse_assign(self: *Parser) Error!AST.Expr {
     const start = self.peek();
-    var vr = try self.parse_expr();
-    errdefer vr.deinit(self.allocator);
+    const vr = try self.parse_expr();
+    // errdefer vr.deinit(self.allocator);
 
     if (self.match_one(.Eq)) |_| {
         const value = try self.parse_expr();
-        errdefer value.deinit(self.allocator);
+        // errdefer value.deinit(self.allocator);
         const end = self.previous();
 
         return AST.Expr{
@@ -276,7 +276,7 @@ fn parse_assign(self: *Parser) Error!AST.Expr {
 
 fn parse_cast(self: *Parser) Error!AST.Expr {
     var value = try self.parse_term();
-    errdefer value.deinit(self.allocator);
+    // errdefer value.deinit(self.allocator);
 
     while (self.match_one(.As)) |_| {
         const tp = try self.parse_type();
@@ -294,7 +294,7 @@ fn parse_cast(self: *Parser) Error!AST.Expr {
 
 fn parse_term(self: *Parser) Error!AST.Expr {
     var lhs = try self.parse_factor();
-    errdefer lhs.deinit(self.allocator);
+    // errdefer lhs.deinit(self.allocator);
 
     while (self.match(&[_]TokenKindTag{ .Plus, .Minus })) |op| {
         const rhs = try self.parse_factor();
@@ -313,7 +313,7 @@ fn parse_term(self: *Parser) Error!AST.Expr {
 
 fn parse_factor(self: *Parser) Error!AST.Expr {
     var lhs = try self.parse_power();
-    errdefer lhs.deinit(self.allocator);
+    // errdefer lhs.deinit(self.allocator);
 
     while (self.match(&[_]TokenKindTag{ .Star, .FSlash })) |op| {
         const rhs = try self.parse_power();
@@ -333,7 +333,7 @@ fn parse_factor(self: *Parser) Error!AST.Expr {
 // TODO: Make it right-associative
 fn parse_power(self: *Parser) Error!AST.Expr {
     var lhs = try self.parse_unary();
-    errdefer lhs.deinit(self.allocator);
+    // errdefer lhs.deinit(self.allocator);
 
     while (self.match_one(.Hat)) |op| {
         const rhs = try self.parse_unary();
@@ -362,7 +362,51 @@ fn parse_unary(self: *Parser) Error!AST.Expr {
         return AST.Expr.init(op, rhs.end, node);
     }
 
-    return self.parse_primary();
+    return self.parse_call();
+}
+
+fn finish_call(self: *Parser, expr: AST.Expr) Error!AST.Expr {
+    var args = AST.ExprNode.CallNode.Args{};
+
+    if (!self.check(.CloseParen)) {
+        while (true) {
+            const node = try self.allocator.create(AST.ExprNode.CallNode.Args.Node);
+            node.data = .{
+                .expr = try self.parse_expr(),
+            };
+            args.append(node);
+            if (self.match_one(.Comma) == null) break;
+        }
+    }
+
+    // TODO: Info of the starting of the paren.
+    _ = try self.consume(.CloseParen, "Expected ')' after arguments.");
+
+    const end = self.previous();
+    return .{
+        .start = expr.start,
+        .end = end,
+        .node = try AST.ExprNode.create(self.allocator, .{
+            .Call = .{
+                .callee = expr,
+                .args = args,
+            },
+        }),
+    };
+}
+
+fn parse_call(self: *Parser) Error!AST.Expr {
+    var expr = try self.parse_primary();
+
+    while (true) {
+        if (self.match_one(.OpenParen)) |_| {
+            expr = try self.finish_call(expr);
+        } else {
+            break;
+        }
+    }
+
+    return expr;
 }
 
 fn parse_primary(self: *Parser) Error!AST.Expr {
@@ -418,7 +462,7 @@ fn parse_primary(self: *Parser) Error!AST.Expr {
 
     if (self.match_one(.OpenParen)) |start| {
         const expr = try self.parse_expr();
-        errdefer expr.deinit(self.allocator);
+        // errdefer expr.deinit(self.allocator);
 
         const end = try self.consume(.CloseParen, "Exepected ')'.");
         return AST.Expr.init(

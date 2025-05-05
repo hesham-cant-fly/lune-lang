@@ -1,6 +1,6 @@
 var x = 20
 do
   local y = x
-  x = 10
+  print(y)
 end
-y = 10
+print(x)

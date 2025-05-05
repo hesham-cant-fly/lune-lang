@@ -40,8 +40,24 @@ pub const SymbolTable = struct {
     }
 
     fn create_builtins(allocator: mem.Allocator) mem.Allocator.Error!Builtin {
-        _ = allocator;
-        const res = Builtin{};
+        var res = Builtin{};
+
+        {
+            var arr = std.ArrayList(Type.Callable.Arg).init(allocator);
+            errdefer arr.deinit();
+            try arr.append(.{
+                .Rest = .{ .kind = .Any },
+            });
+            try res.put(
+                allocator,
+                "print",
+                Symbol.init_callable(
+                    "print",
+                    try Type.create(allocator, .{ .kind = .{ .Primitive = .Nil } }),
+                    arr.items,
+                ),
+            );
+        }
 
         // try res.put(
         //     allocator,
@@ -67,11 +83,13 @@ pub const SymbolTable = struct {
         // };
         scope.data = Scope{};
         self.scopes.append(scope);
+        // std.debug.print("scope start: {}\n", .{self.scopes.len});
         return &scope.data;
     }
 
     pub fn scope_end(self: *SymbolTable) void {
         const node = self.scopes.pop() orelse @panic("No scope are defined.");
+        // std.debug.print("scope end: {}\n", .{self.scopes.len});
         node.data.deinit(self.allocator);
         self.allocator.destroy(node);
     }
@@ -86,7 +104,8 @@ pub const SymbolTable = struct {
 
     pub fn define(self: *SymbolTable, name: Token) Error!void {
         const scope = self.get_current_scope();
-        if (scope.get(name.lexem) != null) return Error.RedefinitionOfVariable;
+        if (scope.get(name.lexem) != null)
+            return Error.RedefinitionOfVariable;
         try scope.put(self.allocator, name.lexem, Symbol.init_unknown(name));
     }
 
@@ -149,8 +168,8 @@ pub const SymbolTable = struct {
     // FIXME: Potential scoping error
     pub fn assign(self: *SymbolTable, name: []const u8, comptime_value: ?ComptimeValue) Error!void {
         // NOTE: Excatly in here
-        const scope = self.get_current_scope();
-        if (scope.getPtr(name)) |vr| {
+        const symbol = self.get_local_first(name);
+        if (symbol) |vr| {
             if (vr.is_type) return Error.AssignmentToType;
             if (vr.constant and vr.assigned)
                 return Error.ReassignmentToConstant;
@@ -245,6 +264,25 @@ pub fn init_type(name: []const u8, tp: Type) Symbol {
         .value_type = tp,
         .is_type = true,
         .constant = true,
+    };
+}
+
+pub fn init_callable(name: []const u8, return_type: *const Type, args: []const Type.Callable.Arg) Symbol {
+    return Symbol{
+        .name = .{
+            .kind = .{ .Identifier = name },
+            .lexem = name,
+            .column = 0,
+            .line = 0,
+        },
+        .value_type = .{
+            .kind = .{
+                .Function = .{
+                    .args = args,
+                    .return_type = return_type,
+                },
+            },
+        },
     };
 }
 

@@ -79,29 +79,29 @@ pub const Stmt = struct {
         };
     }
 
-    pub fn deinit(self: Stmt, allocator: Allocator) void {
-        switch (self.node.*) {
-            .Var => |vr| {
-                if (vr.tp) |tp| {
-                    tp.deinit(allocator);
-                }
-                if (vr.value) |value| {
-                    value.deinit(allocator);
-                }
-            },
-            .Const => |cons| {
-                if (cons.tp) |tp| {
-                    tp.deinit(allocator);
-                }
-                if (cons.value) |value| {
-                    value.deinit(allocator);
-                }
-            },
-            .DoEnd => @panic("Unimplemented"),
-            .Expr => |expr| expr.deinit(allocator),
-        }
-        allocator.destroy(self.node);
-    }
+    // pub fn deinit(self: Stmt, allocator: Allocator) void {
+    //     switch (self.node.*) {
+    //         .Var => |vr| {
+    //             if (vr.tp) |tp| {
+    //                 tp.deinit(allocator);
+    //             }
+    //             if (vr.value) |value| {
+    //                 value.deinit(allocator);
+    //             }
+    //         },
+    //         .Const => |cons| {
+    //             if (cons.tp) |tp| {
+    //                 tp.deinit(allocator);
+    //             }
+    //             if (cons.value) |value| {
+    //                 value.deinit(allocator);
+    //             }
+    //         },
+    //         .DoEnd => @panic("Unimplemented"),
+    //         .Expr => |expr| expr.deinit(allocator),
+    //     }
+    //     allocator.destroy(self.node);
+    // }
 };
 
 pub const TypeNode = union(enum) {
@@ -163,11 +163,20 @@ pub const ExprNode = union(enum) {
         value: Expr,
         tp: Type,
     };
+    pub const CallNode = struct {
+        pub const Arg = struct {
+            expr: Expr,
+        };
+        pub const Args = std.DoublyLinkedList(Arg);
+        callee: Expr,
+        args: Args,
+    };
     Grouping: Expr,
     Binray: BinaryNode,
     Unary: UnaryNode,
     Assign: AssignNode,
     Cast: CastNode,
+    Call: CallNode,
     String: Token,
     Number: Token,
     Identifier: Token,
@@ -194,28 +203,28 @@ pub const Expr = struct {
         };
     }
 
-    pub fn deinit(self: Expr, allocator: Allocator) void {
-        switch (self.node.*) {
-            ExprNode.Grouping => |expr| {
-                expr.deinit(allocator);
-            },
-            ExprNode.Binray => |bin| {
-                bin.lhs.deinit(allocator);
-                bin.rhs.deinit(allocator);
-            },
-            ExprNode.Unary => |unary| {
-                unary.rhs.deinit(allocator);
-            },
-            .Assign => |as| {
-                as.vr.deinit(allocator);
-                as.value.deinit(allocator);
-            },
-            .Cast => |cast| {
-                cast.tp.deinit(allocator);
-                cast.value.deinit(allocator);
-            },
-            .String, .Number, .Identifier, .Boolean, .Nil => {},
-        }
-        allocator.destroy(self.node);
-    }
+    // pub fn deinit(self: Expr, allocator: Allocator) void {
+    //     switch (self.node.*) {
+    //         ExprNode.Grouping => |expr| {
+    //             expr.deinit(allocator);
+    //         },
+    //         ExprNode.Binray => |bin| {
+    //             bin.lhs.deinit(allocator);
+    //             bin.rhs.deinit(allocator);
+    //         },
+    //         ExprNode.Unary => |unary| {
+    //             unary.rhs.deinit(allocator);
+    //         },
+    //         .Assign => |as| {
+    //             as.vr.deinit(allocator);
+    //             as.value.deinit(allocator);
+    //         },
+    //         .Cast => |cast| {
+    //             cast.tp.deinit(allocator);
+    //             cast.value.deinit(allocator);
+    //         },
+    //         .String, .Number, .Identifier, .Boolean, .Nil => {},
+    //     }
+    //     allocator.destroy(self.node);
+    // }
 };

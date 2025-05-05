@@ -52,7 +52,7 @@ pub fn main() !void {
     defer analyzer.deinit();
 
     const tsast = try analyzer.analyze();
-    const tr = Transpiler.init(allocator, tsast);
+    var tr = Transpiler.init(allocator, tsast);
     const res = try tr.compile(.Lua);
     defer res.deinit();
 
@@ -64,7 +64,7 @@ pub fn main() !void {
     try out_file.writeAll(res.items);
 
     // std.time.sleep(std.time.ns_per_s * 30);
-    std.debug.print("{s}\n", .{res.items});
+    // std.debug.print("{s}\n", .{res.items});
 }
 
 pub fn read_file_to_slice(allocator: mem.Allocator, path: str) !str {
