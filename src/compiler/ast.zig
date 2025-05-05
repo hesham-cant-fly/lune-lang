@@ -4,10 +4,32 @@ const Allocator = mem.Allocator;
 const root = @import("root");
 const Token = root.Token;
 
+pub const Block = std.DoublyLinkedList(Stmt);
+pub const BlockIter = struct {
+    list: *Block,
+    current: ?*Block.Node,
+
+    pub fn init(b: *Block) BlockIter {
+        return .{
+            .list = b,
+            .current = b.first,
+        };
+    }
+
+    pub fn next(self: *BlockIter) ?*Block.Node {
+        const current = self.current;
+        if (current) |c| {
+            self.current = c.next;
+        }
+        return current;
+    }
+};
+
 pub const Program = struct {
     start: Token,
     end: Token,
-    body: []const Stmt,
+    // body: []const Stmt,
+    body: Block,
 
     pub fn deinit(self: Program, allocator: Allocator) void {
         for (self.body) |stmt| {
@@ -34,6 +56,7 @@ pub const StmtNode = union(enum) {
     };
     Var: VarNode,
     Const: ConstNode,
+    DoEnd: Block,
     Expr: Expr,
 
     pub fn create(allocator: Allocator, value: StmtNode) Allocator.Error!*StmtNode {
@@ -58,7 +81,7 @@ pub const Stmt = struct {
 
     pub fn deinit(self: Stmt, allocator: Allocator) void {
         switch (self.node.*) {
-            StmtNode.Var => |vr| {
+            .Var => |vr| {
                 if (vr.tp) |tp| {
                     tp.deinit(allocator);
                 }
@@ -66,7 +89,7 @@ pub const Stmt = struct {
                     value.deinit(allocator);
                 }
             },
-            StmtNode.Const => |cons| {
+            .Const => |cons| {
                 if (cons.tp) |tp| {
                     tp.deinit(allocator);
                 }
@@ -74,7 +97,8 @@ pub const Stmt = struct {
                     value.deinit(allocator);
                 }
             },
-            StmtNode.Expr => |expr| expr.deinit(allocator),
+            .DoEnd => @panic("Unimplemented"),
+            .Expr => |expr| expr.deinit(allocator),
         }
         allocator.destroy(self.node);
     }

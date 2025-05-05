@@ -4,9 +4,7 @@ const Step = Build.Step;
 
 pub fn build(b: *Build) void {
     const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{
-        .preferred_optimize_mode = .Debug,
-    });
+    const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
         .name = "lune_lang",

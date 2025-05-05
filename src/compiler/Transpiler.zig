@@ -30,8 +30,9 @@ fn compile_lua(self: *const Transpiler) Error!String {
     var result = String.init(self.allocator);
     errdefer result.deinit();
 
-    for (self.ast.body.items) |stmt| {
-        try compile_lua_stmt(stmt, &result);
+    var body_iter = TSAST.BlockIter.init(&self.ast.body);
+    while (body_iter.next()) |stmt| {
+        try compile_lua_stmt(stmt.data, &result);
     }
     // try compile_lua_expr(self.ast, &result);
 

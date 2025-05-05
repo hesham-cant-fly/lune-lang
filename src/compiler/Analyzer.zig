@@ -45,23 +45,27 @@ pub fn deinit(self: *Analyzer) void {
 }
 
 pub fn analyze(self: *Analyzer) Error!TSAST.Program {
-    var body = std.ArrayList(TSAST.Stmt).init(self.symbol_table.allocator);
-    errdefer {
-        for (body.items) |item| {
-            item.deinit(self.allocator);
-        }
-        body.deinit();
-    }
+    // var body = std.ArrayList(TSAST.Stmt).init(self.symbol_table.allocator);
+    // errdefer {
+    //     for (body.items) |item| {
+    //         item.deinit(self.allocator);
+    //     }
+    //     body.deinit();
+    // }
+    var body = TSAST.Block{};
 
-    for (self.ast.body) |stmt| {
-        const item = self.analyze_stmt(stmt) catch |err| switch (err) {
+    var body_iter = AST.BlockIter.init(&self.ast.body);
+    while (body_iter.next()) |stmt| {
+        const item = self.analyze_stmt(stmt.data) catch |err| switch (err) {
             Error.OutOfMemory => return err,
             else => {
                 self.has_error = true;
                 continue;
             },
         };
-        try body.append(item);
+        const node = try self.allocator.create(TSAST.Block.Node);
+        node.data = item;
+        body.append(node);
     }
 
     if (self.has_error) {
@@ -76,6 +80,7 @@ fn analyze_stmt(self: *Analyzer, stmt: AST.Stmt) Error!TSAST.Stmt {
     return switch (stmt.node.*) {
         .Var => |node| try self.analyze_var(node),
         .Const => |node| try self.analyze_const(node),
+        .DoEnd => @panic("Unimplemented"),
         .Expr => |expr| .{
             .Expr = try self.analyze_expr(expr),
         },

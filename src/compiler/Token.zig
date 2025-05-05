@@ -11,6 +11,8 @@ pub const TokenKindTag = enum {
     Const, // 'const'
     Global, // 'global'
     Local, // 'local'
+    Do, // 'do'
+    End, // 'end'
 
     Nil, // 'nil'
 
@@ -49,6 +51,8 @@ pub const TokenKind = union(TokenKindTag) {
     Const, // 'const'
     Global, // 'global'
     Local, // 'local'
+    Do, // 'do'
+    End, // 'end'
 
     Nil, // 'nil'
 

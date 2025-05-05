@@ -36,13 +36,7 @@ pub fn init(allocator: mem.Allocator, tokens: []const Token, content: []const u8
 
 pub fn parse(self: *Parser) Error!AST.Program {
     const start = self.peek();
-    var body = std.ArrayList(AST.Stmt).init(self.allocator);
-    errdefer {
-        for (body.items) |stmt| {
-            stmt.deinit(self.allocator);
-        }
-        body.deinit();
-    }
+    var body = AST.Block{};
 
     while (!self.is_at_end()) {
         if (self.match_one(.SemiColon)) |_| { // Ignoring semicolons
@@ -57,10 +51,11 @@ pub fn parse(self: *Parser) Error!AST.Program {
         };
         errdefer stmt.deinit(self.allocator);
 
-        try body.append(stmt);
+        const node = try self.allocator.create(AST.Block.Node);
+        node.data = stmt;
+        body.append(node);
     }
 
-    body.shrinkAndFree(body.items.len);
     const end = self.previous();
 
     if (self.has_error) {
@@ -70,7 +65,7 @@ pub fn parse(self: *Parser) Error!AST.Program {
     return .{
         .start = start,
         .end = end,
-        .body = body.items,
+        .body = body,
     };
 }
 

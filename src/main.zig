@@ -35,13 +35,10 @@ pub fn main() !void {
     var lxr = try Lexer.init(allocator, content, "main.lune");
     errdefer lxr.deinit();
 
-    var st: f64 = @floatFromInt(std.time.milliTimestamp());
-
     const tokens = try lxr.scan();
     var parser = Parser.init(arena.allocator(), tokens.items, content, "main.lune");
     const ast = try parser.parse();
     lxr.deinit();
-    // defer ast.deinit(allocator);
 
     // try pretty.print(allocator, ast, .{
     //     .max_depth = 0,
@@ -55,25 +52,19 @@ pub fn main() !void {
     defer analyzer.deinit();
 
     const tsast = try analyzer.analyze();
-    // defer tsast.deinit(allocator);
     const tr = Transpiler.init(allocator, tsast);
     const res = try tr.compile(.Lua);
     defer res.deinit();
-
-    var ed: f64 = @floatFromInt(std.time.milliTimestamp());
-    std.debug.print("compiled in {d:.2}!\n", .{(ed - st) / 1000.0});
 
     const out_file = try std.fs.cwd().createFile("./out.lua", .{
         .truncate = true,
     });
     defer out_file.close();
 
-    // std.debug.print("{s}\n", .{res.items});
-
-    st = @floatFromInt(std.time.milliTimestamp());
     try out_file.writeAll(res.items);
-    ed = @floatFromInt(std.time.milliTimestamp());
-    std.debug.print("written in {d:.2}!\n", .{(ed - st) / 1000.0});
+
+    // std.time.sleep(std.time.ns_per_s * 30);
+    std.debug.print("{s}\n", .{res.items});
 }
 
 pub fn read_file_to_slice(allocator: mem.Allocator, path: str) !str {
@@ -83,6 +74,5 @@ pub fn read_file_to_slice(allocator: mem.Allocator, path: str) !str {
     defer file.close();
 
     const size = try file.getEndPos();
-    std.debug.print("file size: {}\n", .{size});
     return try file.readToEndAlloc(allocator, size);
 }
