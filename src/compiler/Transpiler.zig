@@ -71,6 +71,15 @@ fn compile_lua_stmt(stmt: TSAST.Stmt, res: *String) Error!void {
                 try res.appendSlice("nil");
             }
         },
+        .DoEnd => |block| {
+            try res.appendSlice("do\n");
+            var block_iter = TSAST.BlockIter.init(&block);
+            while (block_iter.next()) |st| {
+                try compile_lua_stmt(st.data, res);
+            }
+
+            try res.appendSlice("end\n");
+        },
         .Expr => |expr| {
             try compile_lua_expr(expr, res, true);
             res.items.len -= 1;

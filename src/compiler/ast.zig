@@ -6,10 +6,10 @@ const Token = root.Token;
 
 pub const Block = std.DoublyLinkedList(Stmt);
 pub const BlockIter = struct {
-    list: *Block,
+    list: *const Block,
     current: ?*Block.Node,
 
-    pub fn init(b: *Block) BlockIter {
+    pub fn init(b: *const Block) BlockIter {
         return .{
             .list = b,
             .current = b.first,

@@ -62,16 +62,18 @@ pub const SymbolTable = struct {
 
     pub fn scope_start(self: *SymbolTable) Error!*Scope {
         const scope = try self.allocator.create(std.DoublyLinkedList(Scope).Node);
-        scope.* = std.DoublyLinkedList(Scope).Node{
-            .data = Scope{},
-        };
+        // scope.* = std.DoublyLinkedList(Scope).Node{
+        //     .data = Scope{},
+        // };
+        scope.data = Scope{};
         self.scopes.append(scope);
+        return &scope.data;
     }
 
     pub fn scope_end(self: *SymbolTable) void {
         const node = self.scopes.pop() orelse @panic("No scope are defined.");
         node.data.deinit(self.allocator);
-        self.allocator.free(node);
+        self.allocator.destroy(node);
     }
 
     pub fn define_type(self: *SymbolTable, name: Token, tp: Type) Error!void {

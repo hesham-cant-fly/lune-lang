@@ -77,6 +77,7 @@ fn parse_stmt(self: *Parser) Error!AST.Stmt {
         .Const => try self.parse_const_stmt(),
         .Global => try self.parse_global(),
         .Local => try self.parse_local(),
+        .Do => try self.parse_doend(),
         else => res: {
             self.index -= 1;
             break :res try self.parse_assign_stmt();
@@ -182,6 +183,21 @@ fn parse_local(self: *Parser) Error!*const AST.StmtNode {
             return self.parse_var_stmt();
         },
     };
+}
+
+fn parse_doend(self: *Parser) Error!*const AST.StmtNode {
+    var block = AST.Block{};
+
+    while (self.match_one(.End) == null) {
+        const stmt = try self.parse_stmt();
+        const node = try self.allocator.create(AST.Block.Node);
+        node.data = stmt;
+        block.append(node);
+    }
+
+    return try AST.StmtNode.create(self.allocator, .{
+        .DoEnd = block,
+    });
 }
 
 fn parse_type(self: *Parser) Error!AST.Type {

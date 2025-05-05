@@ -80,7 +80,7 @@ fn analyze_stmt(self: *Analyzer, stmt: AST.Stmt) Error!TSAST.Stmt {
     return switch (stmt.node.*) {
         .Var => |node| try self.analyze_var(node),
         .Const => |node| try self.analyze_const(node),
-        .DoEnd => @panic("Unimplemented"),
+        .DoEnd => |node| try self.analyze_doend(node),
         .Expr => |expr| .{
             .Expr = try self.analyze_expr(expr),
         },
@@ -215,6 +215,29 @@ fn analyze_const(
             .tp = tp,
             .global = node.global,
         },
+    };
+}
+
+fn analyze_doend(
+    self: *Analyzer,
+    stmt: AST.Block,
+) Error!TSAST.Stmt {
+    var block = TSAST.Block{};
+
+    _ = try self.symbol_table.scope_start();
+
+    var block_iter = AST.BlockIter.init(&stmt);
+    while (block_iter.next()) |node| {
+        const st = try self.analyze_stmt(node.data);
+        const nd = try self.allocator.create(TSAST.Block.Node);
+        nd.data = st;
+        block.append(nd);
+    }
+
+    _ = self.symbol_table.scope_end();
+
+    return TSAST.Stmt{
+        .DoEnd = block,
     };
 }
 
@@ -370,7 +393,18 @@ fn analyze_assignable(
     var expr: TSAST.Expr = undefined;
     switch (node.node.*) {
         AST.ExprNode.Identifier => |id| {
-            symbol = self.symbol_table.get_local_first(id.kind.Identifier) orelse return Error.UndefinedVariable;
+            symbol = self.symbol_table.get_local_first(id.kind.Identifier) orelse {
+                self.report_error(
+                    "Undefined Variable '{s}'.",
+                    .{id.kind.Identifier},
+                    id,
+                    .{
+                        .msg = "",
+                        .column = id.column,
+                    },
+                );
+                return Error.UndefinedVariable;
+            };
             expr = try self.analyze_expr(node);
         },
         else => {

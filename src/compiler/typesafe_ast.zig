@@ -41,6 +41,7 @@ pub const Program = struct {
 
 pub const Stmt = union(enum) {
     Expr: Expr,
+    DoEnd: Block,
     Var: struct {
         name: []const u8,
         value: ?Expr,

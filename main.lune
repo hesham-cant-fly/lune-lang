@@ -1,18 +1,6 @@
-local a: number = 10
-var b = 1 ^ a
-b = 1
-b = a ^ 2
-
-const c: number = "huh" as auto
-c = a
-
--- Comment
--- global var x: any = 30; -- type inference
-
--- global const y: number = 20;
--- local var z: number = x + y;
--- local a: number = z ^ x;
--- global B: number = a - 1;
-
--- const Z: number = B - 10;
--- const zz = "Hello World";
+var x = 20
+do
+  local y = x
+  x = 10
+end
+y = 10
