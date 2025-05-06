@@ -12,4 +12,4 @@ global x = 10
 
 semicolons are now optional :D
 
-* Good new! no global variables hoisting :D
+[[img:./testing-meme.jpg][meme about test]]
