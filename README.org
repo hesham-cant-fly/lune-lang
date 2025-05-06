@@ -12,4 +12,4 @@ global x = 10
 
 semicolons are now optional :D
 
-[[img:./testing-meme.jpg][meme about test]]
+[[./testing-meme.jpg]]
