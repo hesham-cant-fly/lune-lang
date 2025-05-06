@@ -7,7 +7,7 @@ pub fn build(b: *Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
-        .name = "lune_lang",
+        .name = "lune-lang",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,

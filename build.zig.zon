@@ -1,5 +1,5 @@
 .{
-    .name = "lune_lang",
+    .name = "lune-lang",
     .version = "0.0.1",
 
     .fingerprint = 0x915053df4648d551, // Changing this has security and trust implications.

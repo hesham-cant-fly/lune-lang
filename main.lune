@@ -4,4 +4,4 @@ do
   print(y)
 end
 print(x)
-print(y)
+-- print(y)
