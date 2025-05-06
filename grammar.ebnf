@@ -4,6 +4,7 @@ statement        = locals
                  | globals
                  | assignment
                  | scoped_statement
+                 | block
                  .
 
 locals           = "local" , scoped_statement .
@@ -13,7 +14,6 @@ scoped_statement = "var" , typed_id_list , [ "=" , expr_list ]
                  | "const" , typed_id_list , [ "=" , expr_list ]
                  .
 
-
 type             = "" .
 
 ; Expressions
@@ -21,6 +21,7 @@ expr       = literal
            | "(" , expr , ")"
            | expr , binary_op , expr
            | unary_op , expr
+           | expr, "(" , [ expr , ( "," , expr )+ ] , ")"
            .
 
 assignment = var_list , "=" , expr_list .
