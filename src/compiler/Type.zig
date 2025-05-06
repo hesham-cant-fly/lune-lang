@@ -1,9 +1,9 @@
 const std = @import("std");
 const mem = std.mem;
 const Allocator = mem.Allocator;
-const root = @import("root");
-const Token = root.Token;
-const AST = root.AST;
+const lune = @import("lune");
+const Token = lune.Token;
+const AST = lune.AST;
 
 const Symbol = @import("./Symbol.zig");
 

@@ -1,8 +1,8 @@
 const std = @import("std");
-const root = @import("root");
+const lune = @import("lune");
 const mem = std.mem;
 const Allocator = mem.Allocator;
-const Type = root.Type;
+const Type = lune.Type;
 
 pub const Block = std.DoublyLinkedList(Stmt);
 pub const BlockIter = struct {

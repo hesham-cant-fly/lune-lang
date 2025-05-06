@@ -1,9 +1,9 @@
 const std = @import("std");
 const mem = std.mem;
-const root = @import("root");
-const TokenKind = root.TokenKind;
-const Token = root.Token;
-const Type = root.Type;
+const lune = @import("lune");
+const TokenKind = lune.TokenKind;
+const Token = lune.Token;
+const Type = lune.Type;
 
 const Symbol = @This();
 

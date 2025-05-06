@@ -1,23 +1,8 @@
 const std = @import("std");
+const lune = @import("lune");
 const mem = std.mem;
 
 const pretty = @import("pretty");
-
-const Analyzer = @import("./compiler/Analyzer.zig");
-pub const AST = @import("./compiler/ast.zig");
-const Lexer = @import("./compiler/Lexer.zig");
-const Parser = @import("./compiler/Parser.zig");
-pub const Report = @import("./compiler/reporter.zig");
-pub const Symbol = @import("./compiler/Symbol.zig");
-pub const Token = @import("./compiler/Token.zig");
-pub const TokenKindTag = Token.TokenKindTag;
-pub const TokenKind = Token.TokenKind;
-pub const TokenList = Token.TokenList;
-const Transpiler = @import("./compiler/Transpiler.zig");
-pub const Type = @import("./compiler/Type.zig");
-pub const TSAST = @import("./compiler/typesafe_ast.zig");
-pub const Number = @import("./Number.zig").Number;
-pub const termcolor = @import("./termcolor.zig");
 
 const str = []const u8;
 
@@ -40,11 +25,11 @@ pub fn main() !void {
     const content = try read_file_to_slice(allocator, file_name);
     defer allocator.free(content);
 
-    var lxr = try Lexer.init(allocator, content, file_name);
+    var lxr = try lune.Lexer.init(allocator, content, file_name);
     errdefer lxr.deinit();
 
     const tokens = try lxr.scan();
-    var parser = Parser.init(arena.allocator(), tokens.items, content, file_name);
+    var parser = lune.Parser.init(arena.allocator(), tokens.items, content, file_name);
     const ast = try parser.parse();
     lxr.deinit();
 
@@ -56,11 +41,11 @@ pub fn main() !void {
     //     },
     // });
 
-    var analyzer = try Analyzer.init(arena.allocator(), ast, content, file_name);
+    var analyzer = try lune.Analyzer.init(arena.allocator(), ast, content, file_name);
     defer analyzer.deinit();
 
     const tsast = try analyzer.analyze();
-    var tr = Transpiler.init(allocator, tsast);
+    var tr = lune.Transpiler.init(allocator, tsast);
     const res = try tr.compile(.Lua);
     defer res.deinit();
 

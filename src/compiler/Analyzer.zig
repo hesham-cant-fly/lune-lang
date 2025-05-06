@@ -2,15 +2,15 @@
 const std = @import("std");
 const mem = std.mem;
 const Allocator = mem.Allocator;
-const root = @import("root");
-const TSAST = root.TSAST;
-const AST = root.AST;
-const Type = root.Type;
-const Token = root.Token;
-const Symbol = root.Symbol;
+const lune = @import("lune");
+const TSAST = lune.TSAST;
+const AST = lune.AST;
+const Type = lune.Type;
+const Token = lune.Token;
+const Symbol = lune.Symbol;
 const SymbolTable = Symbol.SymbolTable;
 const Scope = Symbol.Scope;
-const Report = root.Report;
+const Report = lune.Report;
 
 const Analyzer = @This();
 

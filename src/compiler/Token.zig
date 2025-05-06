@@ -1,7 +1,7 @@
 const std = @import("std");
-const root = @import("root");
+const lune = @import("lune");
 
-const Number = root.Number;
+const Number = lune.Number;
 
 const Token = @This();
 pub const TokenList = std.ArrayList(Token);

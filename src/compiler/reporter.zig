@@ -1,7 +1,7 @@
 const std = @import("std");
-const root = @import("root");
-const Token = root.Token;
-const termcolor = root.termcolor;
+const lune = @import("lune");
+const Token = lune.Token;
+const termcolor = lune.termcolor;
 
 pub const ReportKind = enum(u8) {
     Error,

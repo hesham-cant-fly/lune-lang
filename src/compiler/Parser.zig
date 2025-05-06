@@ -1,11 +1,11 @@
 const std = @import("std");
 const mem = std.mem;
-const root = @import("root");
-const Token = root.Token;
-const TokenKindTag = root.TokenKindTag;
-const TokenKind = root.TokenKind;
-const AST = root.AST;
-const Report = root.Report;
+const lune = @import("lune");
+const Token = lune.Token;
+const TokenKindTag = lune.TokenKindTag;
+const TokenKind = lune.TokenKind;
+const AST = lune.AST;
+const Report = lune.Report;
 
 const Parser = @This();
 pub const Error = error{

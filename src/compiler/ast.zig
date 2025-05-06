@@ -1,8 +1,8 @@
 const std = @import("std");
 const mem = std.mem;
 const Allocator = mem.Allocator;
-const root = @import("root");
-const Token = root.Token;
+const lune = @import("lune");
+const Token = lune.Token;
 
 pub const Block = std.DoublyLinkedList(Stmt);
 pub const BlockIter = struct {

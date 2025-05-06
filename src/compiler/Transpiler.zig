@@ -1,8 +1,8 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
-const root = @import("root");
-const Token = root.Token;
-const TSAST = root.TSAST;
+const lune = @import("lune");
+const Token = lune.Token;
+const TSAST = lune.TSAST;
 
 const String = std.ArrayList(u8);
 const Transpiler = @This();

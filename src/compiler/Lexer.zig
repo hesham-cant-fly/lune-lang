@@ -1,12 +1,13 @@
 const std = @import("std");
 const unicode = std.unicode;
 const Allocator = std.mem.Allocator;
-const root = @import("root");
-const Number = root.Number;
-const Token = root.Token;
-const TokenList = root.TokenList;
-const TokenKind = root.TokenKind;
-const Reporter = root.Report;
+// const root = @import("lune");
+const lune = @import("lune");
+const Number = lune.Number;
+const Token = lune.Token;
+const TokenList = lune.TokenList;
+const TokenKind = lune.TokenKind;
+const Reporter = lune.Report;
 
 const Lexer = @This();
 
