@@ -59,6 +59,22 @@ pub const SymbolTable = struct {
             );
         }
 
+        {
+            var arr = std.ArrayList(Type.Callable.Arg).init(allocator);
+            errdefer arr.deinit();
+            try arr.append(.{
+                .Normal = .{ .kind = .Any },
+            });
+            try res.put(
+                allocator,
+                "tostring",
+                Symbol.init_callable(
+                    "tostring",
+                    try Type.create(allocator, .{ .kind = .{ .Primitive = .String } }),
+                    arr.items,
+                ),
+            );
+        }
         // try res.put(
         //     allocator,
         //     "auto",
@@ -73,7 +89,6 @@ pub const SymbolTable = struct {
             scope.data.deinit(self.allocator);
             self.allocator.destroy(scope);
         }
-        self.builtin.deinit(self.allocator);
     }
 
     pub fn scope_start(self: *SymbolTable) Error!*Scope {

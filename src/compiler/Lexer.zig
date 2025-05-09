@@ -35,6 +35,7 @@ pub const Error = error{
 
 chars: unicode.Utf8Iterator,
 path: []const u8,
+string_allocator: Allocator,
 tokens: TokenList,
 start: usize = 0,
 current: usize = 0,
@@ -46,12 +47,13 @@ previous_char: u21,
 has_error: bool = false,
 deinited: bool = false,
 
-pub fn init(allocator: Allocator, content: []const u8, path: []const u8) !Lexer {
+pub fn init(allocator: Allocator, string_allocator: Allocator, content: []const u8, path: []const u8) !Lexer {
     const x = try unicode.Utf8View.init(content);
     var iter = x.iterator();
     const current_char = iter.nextCodepoint() orelse 0;
     return Lexer{
         .chars = iter,
+        .string_allocator = string_allocator,
         .tokens = TokenList.init(allocator),
         .current_char = current_char,
         .previous_char = 0,
@@ -60,8 +62,9 @@ pub fn init(allocator: Allocator, content: []const u8, path: []const u8) !Lexer 
 }
 
 pub fn deinit(self: *Lexer) void {
-    if (!self.deinited)
+    if (!self.deinited) {
         self.tokens.deinit();
+    }
     self.deinited = true;
 }
 
@@ -190,7 +193,6 @@ fn add_token(self: *Lexer, kind: TokenKind) Error!void {
         self.column,
     );
     token.index = self.start;
-    token.len = self.current_len;
     try self.tokens.append(token);
 }
 

@@ -3,69 +3,58 @@ const lune = @import("lune");
 const mem = std.mem;
 
 const pretty = @import("pretty");
+const clap = @import("clap");
 
 const str = []const u8;
 
+const main_params = clap.parseParamsComptime(
+    \\-h, --help             Displays this help message
+    \\-c, --compile <str>... Compile multiple files
+    \\-o, --output <str>     Spicify the output folder
+    \\
+);
+
+const my_parser = clap.parsers.default;
+
+const MainArgs = clap.Result(clap.Help, &main_params, my_parser);
+
 pub fn main() !void {
-    if (std.os.argv.len == 1) {
-        std.debug.print("needs some arguments\n", .{});
-        return;
-    }
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
-    defer _ = gpa.deinit();
+    var gpa_state = std.heap.GeneralPurposeAllocator(.{}){};
+    const gpa = gpa_state.allocator();
+    defer _ = gpa_state.deinit();
 
-    var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit();
-
-    const file_name_zero = std.os.argv[1];
-    var len: usize = 0;
-    while (file_name_zero[len] != 0) : (len += 1) {}
-    const file_name = file_name_zero[0..len];
-    const content = try read_file_to_slice(allocator, file_name);
-    defer allocator.free(content);
-
-    var lxr = try lune.Lexer.init(allocator, content, file_name);
-    errdefer lxr.deinit();
-
-    const tokens = try lxr.scan();
-    var parser = lune.Parser.init(arena.allocator(), tokens.items, content, file_name);
-    const ast = try parser.parse();
-    lxr.deinit();
-
-    // try pretty.print(allocator, ast, .{
-    //     .max_depth = 0,
-    //     .tab_size = 4,
-    //     .filter_field_names = .{
-    //         .exclude = &.{ "start", "end" },
-    //     },
-    // });
-
-    var analyzer = try lune.Analyzer.init(arena.allocator(), ast, content, file_name);
-    defer analyzer.deinit();
-
-    const tsast = try analyzer.analyze();
-    var tr = lune.Transpiler.init(allocator, tsast);
-    const res = try tr.compile(.Lua);
+    var diag = clap.Diagnostic{};
+    var res = clap.parse(clap.Help, &main_params, my_parser, .{
+        .diagnostic = &diag,
+        .allocator = gpa,
+    }) catch |err| {
+        diag.report(std.io.getStdErr().writer(), err) catch {};
+        return err;
+    };
     defer res.deinit();
 
-    // const out_file = try std.fs.cwd().createFile("./out.lua", .{
-    //     .truncate = true,
-    // });
-    // defer out_file.close();
+    if (res.args.help != 0) {
+        clap.help(std.io.getStdErr().writer(), clap.Help, &main_params, .{}) catch {};
+        return;
+    }
 
-    // try out_file.writeAll(res.items);
+    var compiler = lune.Compiler.init(gpa);
+    defer compiler.deinit();
 
-    // std.time.sleep(std.time.ns_per_s * 30);
-    std.debug.print("{s}\n", .{res.items});
-}
+    const cwd = try std.fs.cwd().realpathAlloc(compiler.strings_arena.allocator(), ".");
 
-pub fn read_file_to_slice(allocator: mem.Allocator, path: str) !str {
-    const file = try std.fs.cwd().openFile(path, .{
-        .mode = .read_only,
-    });
-    defer file.close();
+    for (res.args.compile) |s| {
+        const new_path = try std.fs.path.join(
+            compiler.strings_arena.allocator(),
+            &[_][]const u8{ cwd, s },
+        );
+        try compiler.process(new_path);
+    }
 
-    const size = try file.getEndPos();
-    return try file.readToEndAlloc(allocator, size);
+    const outpath = if (res.args.output) |o|
+        o
+    else
+        ".";
+
+    try compiler.generate_to(outpath);
 }

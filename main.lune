@@ -1,7 +1,9 @@
-var x = 20
-do
-  local y = x
-  print(y)
-end
-print(x)
--- print(y)
+-- var x = 20
+-- do
+--   local y = x
+--   print(y)
+--   print("Hello World")
+-- end
+-- print(x)
+var a = true
+var x = tostring(a)

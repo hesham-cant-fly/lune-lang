@@ -11,6 +11,7 @@ const Symbol = lune.Symbol;
 const SymbolTable = Symbol.SymbolTable;
 const Scope = Symbol.Scope;
 const Report = lune.Report;
+const Module = lune.Module;
 
 const Analyzer = @This();
 
@@ -43,7 +44,7 @@ pub fn deinit(self: *Analyzer) void {
     self.symbol_table.deinit();
 }
 
-pub fn analyze(self: *Analyzer) Error!TSAST.Program {
+pub fn analyze(self: *Analyzer) Error!Module {
     // var body = std.ArrayList(TSAST.Stmt).init(self.symbol_table.allocator);
     // errdefer {
     //     for (body.items) |item| {
@@ -70,8 +71,12 @@ pub fn analyze(self: *Analyzer) Error!TSAST.Program {
     if (self.has_error) {
         return Error.AnalyzerError;
     }
-    return TSAST.Program{
-        .body = body,
+    return Module{
+        .path = self.path,
+        .exported_symbol = undefined,
+        .tsast = .{
+            .body = body,
+        },
     };
 }
 
@@ -384,14 +389,82 @@ fn analyze_call(
     self: *Analyzer,
     node: AST.ExprNode.CallNode,
 ) Error!TSAST.Expr {
-    const callee = try self.analyze_expr(node.callee);
+    const callee =
+        self.analyze_expr(node.callee) catch |err| switch (err) {
+        error.UndefinedVariable => {
+            self.report_error(
+                "Undefined identifier.",
+                .{},
+                node.callee.start,
+                .{
+                    .msg = "",
+                    .column = node.callee.start.column,
+                },
+            );
+            return err;
+        },
+        else => return err,
+    };
     var args = std.DoublyLinkedList(TSAST.Expr){};
+
+    const callee_type = callee.get_type();
+    if (!callee_type.is_callable()) {
+        self.report_error(
+            "Cannot call a type of `{s}`.",
+            .{callee.get_type()},
+            node.callee.start,
+            .{
+                .msg = "Expected to be a callable type.",
+                .column = node.callee.start.column,
+            },
+        );
+        return Error.TypeMismatch;
+    }
+
+    const callee_args = callee_type.kind.Function.args;
+    var i: usize = 0;
 
     // More type checking
     var current = node.args.first;
-    while (current) |nude| { // Zig's fault
+    var current_index: usize = 0;
+    while (current) |nude| : (current_index += 1) { // Zig's fault
         current = nude.next;
         const expr = try self.analyze_expr(nude.data.expr);
+        const current_arg = callee_args[i];
+
+        switch (current_arg) {
+            .Normal => |t| {
+                if (!t.can_assign(expr.get_type())) {
+                    self.report_error(
+                        "the {d} argument of type `{s}` doesn't match `{s}`.",
+                        .{ current_index, t, expr.get_type() },
+                        node.callee.start,
+                        .{
+                            .msg = "",
+                            .column = nude.data.expr.start.column,
+                        },
+                    );
+                    return Error.TypeMismatch;
+                }
+                i += 1;
+            },
+            .Rest => |t| {
+                if (!t.can_assign(expr.get_type())) {
+                    self.report_error(
+                        "the {d} argument of type `{s}` doesn't match `{s}`.",
+                        .{ current_index, t, expr.get_type() },
+                        node.callee.start,
+                        .{
+                            .msg = "",
+                            .column = node.callee.start.column,
+                        },
+                    );
+                    return Error.TypeMismatch;
+                }
+                i += 1;
+            },
+        }
+
         const nd = try self.allocator.create(std.DoublyLinkedList(TSAST.Expr).Node);
         nd.data = expr;
         args.append(nd);

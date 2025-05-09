@@ -29,8 +29,8 @@ pub fn build(b: *Build) void {
 }
 
 fn add_dependencies(b: *Build, exe: *Step.Compile, compiler_lib: *Build.Module) void {
-    // const clap = b.dependency("clap", .{});
-    // exe.root_module.addImport("clap", clap.module("clap"));
+    const clap = b.dependency("clap", .{});
+    exe.root_module.addImport("clap", clap.module("clap"));
 
     exe.root_module.addImport("lune", compiler_lib);
 

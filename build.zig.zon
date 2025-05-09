@@ -11,6 +11,10 @@
             .url = "https://github.com/timfayz/pretty/archive/v0.10.4.tar.gz",
             .hash = "1220db3fa6510f1686587aab46ac92a882d4f5a287a20d7b687f654a7b8ce3a0e8d6",
         },
+        .clap = .{
+            .url = "https://github.com/Hejsil/zig-clap/archive/refs/tags/0.9.1.tar.gz",
+            .hash = "122062d301a203d003547b414237229b09a7980095061697349f8bef41be9c30266b",
+        },
     },
     .paths = .{
         "README.org",

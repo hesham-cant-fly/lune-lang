@@ -160,6 +160,13 @@ pub fn is_any(self: Type) bool {
     };
 }
 
+pub fn is_callable(self: Type) bool {
+    return switch (self.kind) {
+        .Function => true,
+        else => false,
+    };
+}
+
 pub fn format(
     self: Type,
     comptime fmt: []const u8,
